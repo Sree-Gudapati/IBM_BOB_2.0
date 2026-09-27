@@ -1,0 +1,15 @@
+id: node.econnreset
+family: node
+error_type: Error
+message_regex: ECONNRESET|socket hang up
+category: dependency
+root_cause: 'The peer closed the connection: a keep-alive timeout mismatch, a proxy idle timeout, or the callee crashing mid-request.'
+base_confidence: 0.75
+tags:
+- connectivity
+- keepalive
+fixes:
+- summary: Align keep-alive timeouts so the client's is shorter than the server's
+  tradeoff: Targeted; needs both configs changed
+- summary: Retry idempotent requests on reset
+  tradeoff: Resilient; unsafe for non-idempotent calls

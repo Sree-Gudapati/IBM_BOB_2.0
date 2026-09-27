@@ -367,3 +367,62 @@ Added a full JVM parser with `Caused by:` chain folding and 14 JVM patterns. Jav
 ```
 
 ---
+
+## Task 5 — Node Parser (JavaScript/TypeScript) and 12 Node Patterns
+
+**Status:** ✅ Complete (uncommitted)
+
+The partial commit `be56a0d` registered `Family.NODE: node.parse` and extended detection, but did not include `parsers/node.py`, so every command and 5 test files failed with `ImportError: cannot import name 'node'`. This entry completes the task per the plan and fixes that break.
+
+### Files
+
+| File | Description |
+|---|---|
+| `src/debugagent/parsers/node.py` | Line-by-line parser. `Error [CODE]: msg` → `error_type="Error"`, `message="[CODE] msg"`. `[cause]:` blocks form the `.cause` chain. The V8 heap OOM becomes `FatalError`. `UnhandledPromiseRejection` is kept without frames; other frameless `Error:` lines are ignored. Handles `Uncaught` prefixes, custom `…Error`/`…Exception` classes, `DOMException [TimeoutError]`, `file://`, Windows paths, paths with spaces, `async`/`new` frames, location-less frames (`at async Promise.all (index 0)`), inspector property blocks, CJS loader preambles, and AggregateError `[errors]: [...]` blocks (sub-errors don't replace the trace) |
+| `src/debugagent/patterns/data/node/*.yaml` | 12 patterns (see table) |
+| `tests/parsers/test_node.py` | 18 tests: the plan's 7, plus log-wrapping, 5 frame variants, location-less frames, custom class / `Uncaught`, AggregateError, two traces, anchored `node:` detection, no Python/JVM cross-parsing |
+| `tests/patterns/test_node_patterns.py` | 19 tests: 12 golden, cause-fixture root, ≥10 count, unknown at 0.1, end-to-end OOM and rejection, Jest repro, legacy wording, DOMException |
+| `tests/data/node_cause.txt` | 3-level `[cause]` fixture (Error → TypeError: fetch failed → ECONNREFUSED) |
+
+### Node patterns (12)
+
+| Pattern ID | Error type | Category | Conf |
+|---|---|---|---|
+| `node.undefined_property` | `TypeError` (both `properties of` and legacy `property 'x' of` wording) | code | 0.85 |
+| `node.not_a_function` | `TypeError` | code | 0.80 |
+| `node.reference_error` | `ReferenceError` | code | 0.80 |
+| `node.econnrefused` | `Error` | dependency | 0.85 |
+| `node.timeout` | `Error\|FetchError\|AxiosError\|TimeoutError\|AbortError\|DOMException` | dependency | 0.75 |
+| `node.econnreset` | `Error` | dependency | 0.75 |
+| `node.module_not_found` | `Error` | config | 0.85 |
+| `node.json_parse` | `SyntaxError` | dependency | 0.80 |
+| `node.max_call_stack` | `RangeError` | code | 0.85 |
+| `node.eaddrinuse` | `Error` | config | 0.90 |
+| `node.heap_oom` | `FatalError` | resource | 0.85 |
+| `node.unhandled_rejection` | `UnhandledPromiseRejection\|Error` | code | 0.70 |
+
+### Fixes made along the way
+
+| Severity | Issue | Fix |
+|---|---|---|
+| High | Partial commit broke the whole CLI and test suite (missing `node.py`) | Implemented `node.py` |
+| High | `normalize()` stripped `FATAL` from V8's `FATAL ERROR: … heap out of memory` as a log level, so the frameless OOM was never detected end-to-end | `(?!FATAL ERROR: )` lookahead in `_PREFIX`; `FATAL disk full` is still stripped |
+| Medium | The partial commit's `node:[\w/.-]+:\d+:\d+` detection branch was unanchored (any prose containing `node:x:1:2` counted as Node) | Anchored to an `at` frame |
+| Low | Task 1 deferred item: Node frame paths with spaces not detected | Extra detect branch for paths inside parens |
+
+### Test results
+
+```
+173 passed in 3.96s  (coverage 98%, node.py 100%, mypy --strict clean, ruff clean)
+13.3 MB Node log: 0.47 s; no slow-regex cases on adversarial frame lines
+```
+
+### Still deferred
+
+| Item | Owning task |
+|---|---|
+| Indented raw `panic:` not detected | Task 6 |
+| `short_error_type` doesn't split on `::` | Task 7 |
+| `File "<string>"` alone doesn't match the Python signature; `[main] INFO` order; leading `ERROR` word stripped | Low / future |
+
+---

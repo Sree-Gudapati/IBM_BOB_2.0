@@ -1,0 +1,14 @@
+id: node.unhandled_rejection
+family: node
+error_type: UnhandledPromiseRejection|Error
+message_regex: UnhandledPromiseRejection|unhandled promise rejection|ERR_UNHANDLED_REJECTION|originated either by throwing inside of an async function
+category: code
+root_cause: A Promise rejected with no .catch or try around the await; since Node 15 this crashes the process.
+base_confidence: 0.7
+tags:
+- async
+fixes:
+- summary: Add try/catch around the awaited call or .catch on the chain
+  tradeoff: Targeted; fixes one call site
+- summary: Enable @typescript-eslint/no-floating-promises
+  tradeoff: Prevents recurrence; lint churn across the codebase

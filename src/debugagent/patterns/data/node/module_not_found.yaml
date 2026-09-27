@@ -1,0 +1,15 @@
+id: node.module_not_found
+family: node
+error_type: Error
+message_regex: Cannot find module|ERR_MODULE_NOT_FOUND|Cannot find package
+category: config
+root_cause: A dependency is missing from the deployed image, the path is wrong, or ESM needs an explicit file extension.
+base_confidence: 0.85
+tags:
+- import
+- deploy
+fixes:
+- summary: Move it to dependencies (not devDependencies) and rebuild the image
+  tradeoff: Correct fix; requires a redeploy
+- summary: Fix the import path or add the file extension ESM requires
+  tradeoff: Targeted; only if the path is the problem

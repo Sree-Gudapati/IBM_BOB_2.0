@@ -83,3 +83,14 @@ def test_detects_node_internal_frames():
 # Fix 2 (Review Focus #4 prerequisite): mixed Node+Java log detects both families
 def test_detects_node_internal_plus_java():
     assert detect_families(NODE_INTERNAL + "\n" + JAVA) == {Family.NODE, Family.JVM}
+
+
+def test_v8_fatal_error_line_is_not_a_log_level():
+    line = "FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory"
+    assert normalize(line) == line
+    assert normalize("2026-09-26T10:00:00Z ERROR [web] " + line) == line
+    assert normalize("FATAL disk full") == "disk full"
+
+
+def test_node_frame_path_with_spaces_detected():
+    assert detect_families("Error: x\n    at f (/Users/a b/app.js:1:2)\n") == {Family.NODE}

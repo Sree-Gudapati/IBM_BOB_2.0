@@ -1,0 +1,14 @@
+id: node.max_call_stack
+family: node
+error_type: RangeError
+message_regex: Maximum call stack size exceeded
+category: code
+root_cause: Unbounded recursion, often a circular structure or a setter/getter that calls itself.
+base_confidence: 0.85
+tags:
+- recursion
+fixes:
+- summary: Add a base case or a cycle guard
+  tradeoff: Root fix; needs to find the cycle
+- summary: Convert the recursion to iteration with an explicit stack
+  tradeoff: Robust; a larger refactor

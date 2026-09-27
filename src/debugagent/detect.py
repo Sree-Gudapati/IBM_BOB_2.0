@@ -20,7 +20,8 @@ _ANSI = re.compile(r"\x1b(?:\[[0-9;]*[A-Za-z]|\][^\x07\x1b]*(?:\x07|\x1b\\))")
 _LEVELS = "TRACE|DEBUG|INFO|WARN|WARNING|ERROR|SEVERE|FATAL|CRITICAL"
 _PREFIX = re.compile(
     r"^(?:\[?\d{4}-\d{2}-\d{2}[T ][\d:.,]+(?:Z|[+-]\d{2}:?\d{2})?\]? )?"
-    rf"(?:\[?(?:{_LEVELS})\]?:? |\[?(?:{_LEVELS.lower()})\]? )?"
+    # (?!FATAL ERROR: ) keeps V8's heap-OOM line intact: it looks like a level but is payload.
+    rf"(?:(?!FATAL ERROR: )\[?(?:{_LEVELS})\]?:? |\[?(?:{_LEVELS.lower()})\]? )?"
     r"(?:\[[\w.@:/-]+\] )?"
 )
 
@@ -40,7 +41,9 @@ _SIGNATURES: dict[Family, re.Pattern[str]] = {
     # (node:net:1555:16), V8 fatal heap OOM, and UnhandledPromiseRejection.
     Family.NODE: re.compile(
         r"^\s*at (?:.+ \()?(?:file://)?[^\s()]+\.(?:js|mjs|cjs|ts|tsx|jsx):\d+:\d+\)?\s*(?:\{)?\s*$"
-        r"|node:[\w/.-]+:\d+:\d+"
+        # inside parens the path may contain spaces ("/Users/a b/app.js")
+        r"|^\s*at .+ \((?:file://)?[^()]+\.(?:js|mjs|cjs|ts|tsx|jsx):\d+:\d+\)\s*(?:\{)?\s*$"
+        r"|^\s*at (?:.+ \()?node:[\w/.-]+:\d+:\d+\)?\s*(?:\{)?\s*$"
         r"|^FATAL ERROR: .*heap out of memory"
         r"|^\[UnhandledPromiseRejection: ",
         re.MULTILINE,

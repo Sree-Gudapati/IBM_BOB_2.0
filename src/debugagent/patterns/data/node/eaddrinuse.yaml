@@ -1,0 +1,14 @@
+id: node.eaddrinuse
+family: node
+error_type: Error
+message_regex: EADDRINUSE
+category: config
+root_cause: 'The port is already in use: a duplicate process, a previous instance that did not exit, or a port clash in config.'
+base_confidence: 0.9
+tags:
+- port
+fixes:
+- summary: Make the port configurable and unique per service
+  tradeoff: Clean; a config change per environment
+- summary: Handle SIGTERM for graceful shutdown so restarts release the port
+  tradeoff: Prevents recurrence; code change

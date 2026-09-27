@@ -1,0 +1,14 @@
+id: node.econnrefused
+family: node
+error_type: Error
+message_regex: ECONNREFUSED
+category: dependency
+root_cause: 'Nothing is listening at the target: the dependency is down, the host/port is wrong, or it is not ready yet.'
+base_confidence: 0.85
+tags:
+- connectivity
+fixes:
+- summary: Check service discovery / env config for the target host and port
+  tradeoff: Config-only fix; no code change
+- summary: Add retry with backoff and a readiness gate before serving traffic
+  tradeoff: Resilient to startup races; failures surface more slowly

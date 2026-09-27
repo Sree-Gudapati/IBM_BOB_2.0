@@ -1,0 +1,15 @@
+id: node.not_a_function
+family: node
+error_type: TypeError
+message_regex: is not a function
+category: code
+root_cause: 'Called a non-function: a default vs named import mixup, ESM/CJS interop, or a library API change.'
+base_confidence: 0.8
+tags:
+- api-drift
+- import
+fixes:
+- summary: Fix the import form (import x vs import { x })
+  tradeoff: Targeted; requires knowing the module's export shape
+- summary: Pin the library version that has the expected API
+  tradeoff: Fast; defers the upgrade work

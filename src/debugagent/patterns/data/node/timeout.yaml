@@ -1,0 +1,14 @@
+id: node.timeout
+family: node
+error_type: Error|FetchError|AxiosError|TimeoutError|AbortError|DOMException
+message_regex: ETIMEDOUT|ESOCKETTIMEDOUT|timeout of \d+ms exceeded|aborted due to timeout|operation was aborted
+category: dependency
+root_cause: A downstream call exceeded its timeout; the fault is usually in the service being called.
+base_confidence: 0.75
+tags:
+- timeout
+fixes:
+- summary: Tune the timeout and add retries with jitter
+  tradeoff: Quick; can amplify load on a struggling callee
+- summary: Fix callee latency and add a circuit breaker at this call site
+  tradeoff: Root fix; needs cross-team coordination

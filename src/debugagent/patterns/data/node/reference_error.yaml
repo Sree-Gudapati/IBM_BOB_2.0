@@ -1,0 +1,15 @@
+id: node.reference_error
+family: node
+error_type: ReferenceError
+message_regex: is not defined
+category: code
+root_cause: 'An identifier is not in scope: a typo, a missing import, or a browser-only global used on the server.'
+base_confidence: 0.8
+tags:
+- typo
+- scoping
+fixes:
+- summary: Add the missing import or declaration
+  tradeoff: Simple; fixes only this occurrence
+- summary: Enable no-undef and TypeScript strict mode to catch it at build time
+  tradeoff: Prevents recurrence; config and cleanup work

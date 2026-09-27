@@ -1,0 +1,14 @@
+id: node.json_parse
+family: node
+error_type: SyntaxError
+message_regex: JSON|Unexpected token
+category: dependency
+root_cause: JSON.parse got a non-JSON body, usually an HTML error page or an empty response from upstream.
+base_confidence: 0.8
+tags:
+- parsing
+fixes:
+- summary: Check res.ok and the content-type before parsing
+  tradeoff: Clear errors at the call site; small code change
+- summary: Log the truncated raw body when parsing fails
+  tradeoff: Makes it diagnosable; increases log volume

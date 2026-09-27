@@ -1,0 +1,15 @@
+id: node.heap_oom
+family: node
+error_type: FatalError
+message_regex: heap out of memory
+category: resource
+root_cause: 'The V8 heap limit was hit: a leak (unbounded cache or listeners) or a genuinely large working set.'
+base_confidence: 0.85
+tags:
+- memory
+- leak
+fixes:
+- summary: Take a heap snapshot and fix the retaining path
+  tradeoff: Root fix; takes investigation time
+- summary: Raise --max-old-space-size to match the container memory limit
+  tradeoff: Fast; only delays recurrence if it is a leak

@@ -1,0 +1,14 @@
+id: node.undefined_property
+family: node
+error_type: TypeError
+message_regex: Cannot read propert(?:y|ies) (?:'[^']*' )?of (?:undefined|null)
+category: code
+root_cause: 'A property was read from undefined/null: a missing API field, an un-awaited Promise, or an empty lookup.'
+base_confidence: 0.85
+tags:
+- 'null'
+fixes:
+- summary: Use optional chaining with an explicit fallback
+  tradeoff: Local and fast; may hide bad or missing data
+- summary: Validate the response with a schema (e.g. zod) at the service boundary
+  tradeoff: Fails early and loudly; more code and a schema to maintain
