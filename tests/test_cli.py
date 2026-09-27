@@ -117,3 +117,17 @@ def test_scan_writes_only_under_debugagent(mini_system):
     assert r.exit_code == 0 and "orders" in r.stdout and "calls: inventory" in r.stdout
     new = {p for p in mini_system.rglob("*")} - before
     assert new and all(".debugagent" in str(p) for p in new)
+
+def test_diagnose_with_codebase_root(mini_system, tmp_path):
+    p = tmp_path / "t.txt"
+    p.write_text(
+        "AxiosError: timeout of 5000ms exceeded\n    at placeOrder (/srv/web/src/orders.ts:22:11)\n"
+        + open("tests/data/jvm_chained.txt").read()
+    )
+    r = R.invoke(app, ["diagnose", str(p), "--codebase", str(mini_system)])
+    assert r.exit_code == 0 and "Service: orders" in r.stdout and "likely origin" in r.stdout
+
+
+def test_diagnose_with_bad_codebase_path():
+    r = R.invoke(app, ["diagnose", "tests/data/python_none.txt", "--codebase", "nope/"])
+    assert r.exit_code == 2 and "codebase" in r.output.lower()

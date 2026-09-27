@@ -9,7 +9,7 @@ from debugagent.orchestrator import diagnose as run_diagnose
 from debugagent.parsers import PARSERS
 from debugagent.patterns.loader import PatternError
 from debugagent.render import DEFAULT_JSON_LIMIT, render_json, render_text
-from debugagent.scanner import DEFAULT_MAP_PATH, save_map, scan as run_scan
+from debugagent.scanner import DEFAULT_MAP_PATH, load_map, save_map, scan as run_scan
 from debugagent.subagent import build_subagents
 
 app = typer.Typer(no_args_is_help=True, add_completion=False)
@@ -69,6 +69,17 @@ def _read_input(source: str | None) -> str:
     return text
 
 
+def _load_codebase(path: Optional[Path]):
+    if path is None:
+        return None
+    if path.is_file():
+        return load_map(path)
+    if path.is_dir():
+        mp = path / DEFAULT_MAP_PATH
+        return load_map(mp) if mp.is_file() else run_scan(path, history=False)
+    raise _fail(f"Codebase path not found: {path}", 2)
+
+
 @app.command()
 def diagnose(
     source: str | None = typer.Argument(None, help="File containing a trace/log; '-' or omitted reads stdin"),
@@ -77,6 +88,7 @@ def diagnose(
     limit: int = typer.Option(DEFAULT_JSON_LIMIT, "--limit", min=1,
                               help="Max hypotheses in JSON output"),
     timeout: float = typer.Option(2.0, "--timeout", help="Per-subagent timeout in seconds"),
+    codebase: Optional[Path] = typer.Option(None, "--codebase", help="Codebase map JSON or repo root"),
 ) -> None:
     """Diagnose a stack trace or error log."""
     for pdir in patterns:
@@ -87,7 +99,7 @@ def diagnose(
         subagents = build_subagents(patterns)
     except PatternError as e:
         raise _fail(f"Pattern database error: {e}", 1) from None
-    d = run_diagnose(text, subagents, timeout_s=timeout)
+    d = run_diagnose(text, subagents, timeout_s=timeout, codebase=_load_codebase(codebase))
     if d.top is None:
         unsupported = sorted(f.value for f in d.families if f not in subagents)
         if unsupported:
