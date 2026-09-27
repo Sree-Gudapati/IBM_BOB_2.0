@@ -14,6 +14,7 @@ _LIB_PATH = re.compile(
     r"site-packages/|dist-packages/|/lib/python\d[\d.]*/|<frozen |node_modules/|^node:|^internal/"
     r"|/usr/local/go/src/|/go/pkg/mod/|^runtime/|\.cargo/registry/|^/rustc/|/library/(?:std|core|alloc)/"
 )
+_GO_LIB_FUNCS = ("runtime.", "internal/", "sync.", "testing.")
 _JVM_LIB = re.compile(
     r"^(?:java|javax|jdk|sun|com\.sun|kotlin|kotlinx|scala"
     r"|org\.springframework|io\.netty|org\.apache|com\.zaxxer"
@@ -24,6 +25,8 @@ _JVM_LIB = re.compile(
 def is_library_frame(frame: Frame, family: Family) -> bool:
     if family is Family.JVM:
         return bool(frame.module and _JVM_LIB.match(frame.module))
+    if family is Family.GO and (frame.function == "panic" or frame.function.startswith(_GO_LIB_FUNCS)):
+        return True     # runtime frames, wherever GOROOT lives (Homebrew, /usr/lib/go, …)
     return bool(_LIB_PATH.search(frame.file))
 
 

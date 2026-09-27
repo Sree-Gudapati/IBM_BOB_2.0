@@ -488,3 +488,34 @@ Added the Go parser and 14 Go patterns. Go panics and fatal errors now flow thro
 
 ---
 
+## Task 6 — Post-Review Fixes
+
+**Status:** ✅ Complete (uncommitted)
+
+### Fixes
+
+| Severity | Issue | Fix |
+|---|---|---|
+| High | `normalize()` stripped lowercase `fatal ` as a log level, turning `fatal error: …` into `error: …`. Every `fatal error` trace (deadlock, concurrent map writes, stack overflow, OOM: 4 of 14 patterns) failed end-to-end ("No stack trace found"). Parser tests passed because they called `parse()` directly | The prefix lookahead is now `(?!(?i:fatal error: ))` around both level branches; it protects Go's `fatal error:` and V8's `FATAL ERROR:`, while `fatal disk full` is still stripped |
+| High | `GOTRACEBACK=system` goroutine headers (`goroutine 1 gp=0x… m=0 mp=0x… [running]:`) and frame lines with `fp=/sp=/pc=` fields were not parsed or detected | `_GOROUTINE`, `_FILE` and the detect signature accept the extra fields |
+| Medium | Frameless runtime failures dropped (`fatal error: runtime: out of memory` with no dump, `GOTRACEBACK=none`) | Kept when the type is `fatal error` or `runtime error`; a bare `panic: <text>` without a dump is still ignored (may be a log line) |
+| Medium | Runtime frames outside `/usr/local/go` (Homebrew, `/usr/lib/go`) reported as the crash location | `is_library_frame` treats Go functions `panic`, `runtime.*`, `internal/*`, `sync.*`, `testing.*` as library, whatever the GOROOT |
+| Medium | Frame paths containing spaces not parsed | `_FILE` accepts spaces inside the path |
+| Low | Task 1 deferred item: indented `panic:` not detected | Detect signature and parser accept leading whitespace |
+| Low | `...additional frames elided...` taken as a function name | Skipped |
+| Low | 2 `mypy --strict` errors (`dict` state, optional match); 4 ruff issues | State moved to a typed `_Cur` dataclass; ruff clean |
+
+### New tests (15)
+
+- `tests/parsers/test_go.py` (9): `fatal error` survives `normalize()`, log-wrapped fatal error, GOTRACEBACK=system, frameless runtime failures, runtime-stack section, path with spaces, 2 detection variants, prose `panic:` not detected
+- `tests/patterns/test_go_patterns.py` (6): 4 fatal-error patterns end-to-end, non-`/usr/local` runtime frames, frameless OOM
+
+### Test results after fixes
+
+```
+214 passed in 4.36s  (coverage 98%, mypy --strict clean, ruff clean)
+3.1 MB Go dump (60k goroutine blocks): 0.27 s
+```
+
+---
+

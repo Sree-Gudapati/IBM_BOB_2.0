@@ -20,8 +20,9 @@ _ANSI = re.compile(r"\x1b(?:\[[0-9;]*[A-Za-z]|\][^\x07\x1b]*(?:\x07|\x1b\\))")
 _LEVELS = "TRACE|DEBUG|INFO|WARN|WARNING|ERROR|SEVERE|FATAL|CRITICAL"
 _PREFIX = re.compile(
     r"^(?:\[?\d{4}-\d{2}-\d{2}[T ][\d:.,]+(?:Z|[+-]\d{2}:?\d{2})?\]? )?"
-    # (?!FATAL ERROR: ) keeps V8's heap-OOM line intact: it looks like a level but is payload.
-    rf"(?:(?!FATAL ERROR: )\[?(?:{_LEVELS})\]?:? |\[?(?:{_LEVELS.lower()})\]? )?"
+    # "FATAL ERROR: …" (V8 heap OOM) and "fatal error: …" (Go runtime) look like a level
+    # but are payload; the case-insensitive lookahead keeps both intact.
+    rf"(?:(?!(?i:fatal error: ))(?:\[?(?:{_LEVELS})\]?:? |\[?(?:{_LEVELS.lower()})\]? ))?"
     r"(?:\[[\w.@:/-]+\] )?"
 )
 
@@ -48,7 +49,8 @@ _SIGNATURES: dict[Family, re.Pattern[str]] = {
         r"|^\[UnhandledPromiseRejection: ",
         re.MULTILINE,
     ),
-    Family.GO: re.compile(r"^panic: |^fatal error: |^goroutine \d+ \[", re.MULTILINE),
+    # goroutine headers may carry GOTRACEBACK=system fields: "goroutine 1 gp=0x… m=0 mp=0x… [running]:"
+    Family.GO: re.compile(r"^\s*panic: |^fatal error: |^goroutine \d+ (?:\S+ )*\[", re.MULTILINE),
     Family.RUST: re.compile(r"^thread '[^']*' panicked at ", re.MULTILINE),
 }
 

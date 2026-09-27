@@ -1,4 +1,5 @@
 import pytest
+
 from debugagent.models import Family, Frame, ParsedTrace
 from debugagent.patterns.loader import DEFAULT_PATTERN_DIR, load_patterns
 from debugagent.patterns.matcher import match_trace
@@ -50,3 +51,31 @@ def test_end_to_end_nil_deref_via_parser():
     h = match_trace(t, PATS)
     assert h.pattern_id == "go.nil_pointer"
     assert h.locations[0].function == "main.(*Store).Get"
+
+
+# --- Task 6 review fixes: fatal-error patterns reachable end-to-end ------------
+import pytest as _pytest
+
+from debugagent.orchestrator import diagnose as _diagnose
+from debugagent.subagent import build_subagents as _build
+
+_S = _build()
+_DUMP = "\n\ngoroutine 1 [running]:\nmain.main()\n\t/srv/app/main.go:5 +0x2\n"
+
+@_pytest.mark.parametrize("head,expected", [
+    ("fatal error: all goroutines are asleep - deadlock!", "go.deadlock"),
+    ("fatal error: concurrent map writes", "go.concurrent_map"),
+    ("fatal error: stack overflow", "go.stack_overflow"),
+    ("fatal error: runtime: out of memory", "go.oom"),
+])
+def test_fatal_error_patterns_end_to_end(head, expected):
+    assert _diagnose(head + _DUMP, _S).top.pattern_id == expected
+
+def test_runtime_frames_outside_usr_local_are_library():
+    text = ("panic: runtime error: index out of range [5] with length 3\n\ngoroutine 1 [running]:\n"
+            "panic({0x4a0f40?, 0xc000012345?})\n\t/opt/homebrew/Cellar/go/1.22.0/libexec/src/runtime/panic.go:770 +0x132\n"
+            "main.pick(...)\n\t/srv/app/pick.go:5\n")
+    assert _diagnose(text, _S).top.locations[0].file == "/srv/app/pick.go"
+
+def test_frameless_oom_end_to_end():
+    assert _diagnose("fatal error: runtime: out of memory\n", _S).top.pattern_id == "go.oom"
