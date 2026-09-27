@@ -205,3 +205,42 @@ Perf: 7.1 MB log / 1,409 traces in 0.49 s
 | Low | 19 auto-fixable ruff style issues | Cleanup |
 
 ---
+
+## Task 3 — Language Subagent, Sequential Diagnose, Renderers, and the Diagnose CLI
+
+**Status:** ✅ Complete
+**Commit:** `cc6cdf4`
+
+### What was done
+
+Wired the parser + pattern pipeline into a working CLI. `debugagent diagnose` now runs end-to-end for Python: reads a file or stdin, normalizes, detects families, dispatches subagents, aggregates hypotheses, and outputs a full diagnosis in text or JSON.
+
+### Files created
+
+| File | Description |
+|---|---|
+| `src/debugagent/subagent.py` | `LanguageSubagent` dataclass with `.run(text) -> list[Hypothesis]`; `build_subagents()` loads patterns and wires each registered parser to its family's pattern slice |
+| `src/debugagent/aggregator.py` | `aggregate()` deduplicates hypotheses by `(pattern_id, file, line, service)` keeping the highest-confidence copy, then sorts by confidence desc |
+| `src/debugagent/orchestrator.py` | Sequential `diagnose()`: normalizes input, detects families, runs each subagent, aggregates, attaches truncation note if input exceeded 5 MB |
+| `src/debugagent/render.py` | `render_text()` — full output contract (confidence %, root cause, locations, fixes with trade-offs, repro test); `render_json()` — round-trippable JSON |
+| `src/debugagent/cli.py` | `typer` app: `diagnose [SOURCE\|-] [--json] [--patterns DIR]...`; exit 0 = diagnosed, 1 = pattern DB error, 2 = no input / no trace / file not found |
+| `tests/data/python_none.txt` | Fixture: Python `AttributeError: 'NoneType' object has no attribute 'zip'` traceback |
+| `tests/test_subagent.py` | 2 tests: family isolation, one hypothesis per trace |
+| `tests/test_orchestrator.py` | 4 tests: end-to-end Python, deduplication, no-trace empty diagnosis, truncation note |
+| `tests/test_render.py` | 2 tests: text output contract sections, JSON round-trip |
+| `tests/test_cli.py` | 7 tests: file input, stdin JSON, empty stdin exit 2, binary garbage exit 2, missing file exit 2, bad pattern dir exit 1, large log within 5 s budget |
+
+### Test results
+
+```
+76 passed in 2.07s
+```
+
+### Key design decisions
+
+- **`CliRunner()` without `mix_stderr`** — this typer version already merges stderr into stdout by default; the `mix_stderr` kwarg was removed.
+- **Deduplication key** is `(pattern_id, file, line, service)` — the same exception at the same location appearing twice (e.g. log replay) produces exactly one hypothesis.
+- **Exit codes** strictly follow the spec: 0 = diagnosis produced, 1 = pattern DB broken, 2 = bad/missing input or no recognizable trace.
+- **`diagnose` is still sequential** — Task 8 parallelizes it with a thread pool and per-subagent timeouts. The interface (`diagnose(text, subagents)`) is unchanged so Task 8 is a drop-in replacement.
+
+---
