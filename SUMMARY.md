@@ -81,3 +81,61 @@ Two high-severity bugs found by extended test review were fixed before Task 2 be
 | 5g | Low | 10 auto-fixable ruff style issues | Task 1 cleanup |
 
 ---
+
+## Task 2 — Python Parser, Pattern DB, Matcher, Repro Templates, and 13 Python Patterns
+
+**Status:** ✅ Complete
+**Commit:** `3d19482`
+
+### What was done
+
+Built the full pattern-matching pipeline that takes raw Python tracebacks all the way to ranked hypotheses with fixes and repro test skeletons. This is the first vertical slice: Python traces → hypotheses.
+
+### Files created
+
+| File | Description |
+|---|---|
+| `src/debugagent/parsers/python.py` | Stateful line-by-line parser: detects `Traceback` headers, `File` frame lines, caret markers, chained-exception separators, and exception lines. Reverses frame list so `frames[0]` is innermost. Returns a list of `ParsedTrace` with `.cause` chains for chained exceptions. |
+| `src/debugagent/parsers/__init__.py` | `PARSERS: dict[Family, Callable]` registry — Python only for now; Tasks 4–7 add the rest. |
+| `src/debugagent/patterns/repro.py` | `render_repro()` using `string.Template`. `FAMILY_REPRO` dict holds one template per language family (Python, JVM, Node, Go, Rust) for use in later tasks. |
+| `src/debugagent/patterns/loader.py` | `Pattern` dataclass, `PatternError`, `DEFAULT_PATTERN_DIR`, `load_patterns(*dirs)` — validates required fields, confidence range (0,1), 2–3 fixes, regex compilation; assigns `source` as `"builtin"` or `"manual"`. |
+| `src/debugagent/patterns/matcher.py` | `match_trace()` — walks `.root()`, scores patterns (specific message match beats higher-confidence generic by priority tier, generic discounted by 0.85), returns `<family>.unknown` at confidence 0.1 for no match. `is_library_frame()` — path/module heuristics for all 5 families. |
+| `src/debugagent/patterns/data/python/*.yaml` | 13 Python patterns (see table below) |
+| `tests/parsers/test_python.py` | 6 parser tests |
+| `tests/patterns/test_loader.py` | 8 loader tests (valid load, 4 invalid mutations, duplicate ids, missing dir, ≥10 builtins) |
+| `tests/patterns/test_matcher.py` | 7 matcher tests (specific beats generic, generic discounted, root cause not wrapper, unknown, library frame skip, repro rendered, `is_library_frame`) |
+| `tests/patterns/test_python_patterns.py` | 13 golden tests — one per pattern |
+| `tests/__init__.py`, `tests/parsers/__init__.py`, `tests/patterns/__init__.py` | Package markers for cross-test imports |
+
+### Python patterns (13)
+
+| Pattern ID | Error type | Message regex | Category | Confidence |
+|---|---|---|---|---|
+| `python.attribute_error.none_type` | `AttributeError` | `'NoneType' object has no attribute` | code | 0.85 |
+| `python.attribute_error.missing_attr` | `AttributeError` | `has no attribute` | code | 0.60 |
+| `python.import_error.module_not_found` | `ModuleNotFoundError` | `No module named` | config | 0.85 |
+| `python.import_error.cannot_import_name` | `ImportError` | `cannot import name` | code | 0.80 |
+| `python.key_error` | `KeyError` | _(generic)_ | code | 0.70 |
+| `python.type_error.none_not_subscriptable` | `TypeError` | `'NoneType' object is not …` | code | 0.85 |
+| `python.type_error.call_signature` | `TypeError` | missing/extra args pattern | code | 0.85 |
+| `python.index_error` | `IndexError` | `index out of range` | code | 0.80 |
+| `python.recursion_error` | `RecursionError` | `maximum recursion depth exceeded` | code | 0.85 |
+| `python.timeout` | `TimeoutError\|ReadTimeout\|…` | _(generic)_ | dependency | 0.75 |
+| `python.connection_refused` | `ConnectionRefusedError\|…` | `Connection refused\|Errno 111\|…` | dependency | 0.80 |
+| `python.json_decode` | `JSONDecodeError` | _(generic)_ | dependency | 0.75 |
+| `python.unbound_local` | `UnboundLocalError` | _(generic)_ | code | 0.85 |
+
+### Test results
+
+```
+47 passed in 0.45s
+```
+
+### Key design decisions
+
+- **Specific-beats-generic scoring:** a pattern with a `message_regex` match is always preferred over one without, regardless of `base_confidence`. Generic matches are discounted by factor 0.85.
+- **Root cause matching:** `match_trace()` calls `.root()` so chained exceptions are always diagnosed at the original cause, not the outer wrapper.
+- **Library frame filtering:** `is_library_frame()` uses path heuristics for Python/Node/Go/Rust and package-prefix heuristics for JVM. Locations exposed in `Hypothesis` are app frames only (max 3), falling back to the first frame if all are library frames.
+- **`FAMILY_REPRO` templates pre-written for all 5 families** so Tasks 4–7 get repro rendering for free.
+
+---
