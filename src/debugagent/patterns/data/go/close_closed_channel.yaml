@@ -1,0 +1,16 @@
+id: go.close_closed_channel
+family: go
+error_type: panic
+message_regex: "close of (closed|nil) channel"
+category: code
+root_cause: >
+  close() was called on a channel that was already closed, or on a nil
+  channel. This happens when multiple shutdown paths each try to close
+  the same channel, or when a channel field was never initialized.
+base_confidence: 0.90
+tags: [concurrency]
+fixes:
+  - summary: Wrap close in sync.Once so it can only be called once regardless of how many paths reach it
+    tradeoff: Quick fix; masks the underlying unclear ownership rather than fixing it
+  - summary: Designate a single goroutine as the owner responsible for closing the channel
+    tradeoff: Correct by design; requires restructuring the shutdown logic

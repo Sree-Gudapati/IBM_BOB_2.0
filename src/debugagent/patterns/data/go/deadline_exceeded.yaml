@@ -1,0 +1,16 @@
+id: go.deadline_exceeded
+family: go
+error_type: panic
+message_regex: "context deadline exceeded|i/o timeout|Client.Timeout exceeded"
+category: dependency
+root_cause: >
+  A downstream call exceeded its context deadline or HTTP timeout and the
+  error was panic'd instead of being returned to the caller. The actual
+  fault is usually in the downstream service being too slow.
+base_confidence: 0.70
+tags: [timeout]
+fixes:
+  - summary: Return the error to the caller and let it decide whether to retry with backoff
+    tradeoff: Correct and idiomatic Go; callers must handle the error path
+  - summary: Increase the deadline/timeout for this specific call path
+    tradeoff: Fast relief; may hide genuine callee latency problems

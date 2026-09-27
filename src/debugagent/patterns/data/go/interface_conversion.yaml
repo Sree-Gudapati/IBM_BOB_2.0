@@ -1,0 +1,16 @@
+id: go.interface_conversion
+family: go
+error_type: panic
+message_regex: "interface conversion"
+category: code
+root_cause: >
+  An unchecked type assertion x.(T) was applied to a value with a different
+  dynamic type, typically after JSON decoding into interface{} or after
+  receiving a value from a heterogeneous channel.
+base_confidence: 0.85
+tags: [types]
+fixes:
+  - summary: Use the two-value form v, ok := x.(T) and handle the !ok case explicitly
+    tradeoff: Safe; the !ok branch must decide what to return or error
+  - summary: Decode JSON into typed structs instead of interface{}, so the type is known at compile time
+    tradeoff: Removes the bug class; requires defining structs for all shapes

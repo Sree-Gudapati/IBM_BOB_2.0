@@ -1,0 +1,16 @@
+id: go.stack_overflow
+family: go
+error_type: fatal error
+message_regex: "stack overflow"
+category: code
+root_cause: >
+  Unbounded recursion exhausted the goroutine stack, often from a String(),
+  MarshalJSON(), or Error() method that triggers itself via fmt/json (e.g.
+  a type calling fmt.Sprintf("%v", self)).
+base_confidence: 0.85
+tags: [recursion]
+fixes:
+  - summary: Break the self-call by converting to a type alias inside the method to avoid re-invoking the interface
+    tradeoff: Targeted; requires understanding which method triggers the cycle
+  - summary: Rewrite the recursion as iteration with an explicit stack
+    tradeoff: Robust and removes the overflow class; larger refactor

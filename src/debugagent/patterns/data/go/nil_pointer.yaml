@@ -1,0 +1,16 @@
+id: go.nil_pointer
+family: go
+error_type: runtime error
+message_regex: "nil pointer dereference"
+category: code
+root_cause: >
+  A nil pointer was dereferenced: the value was used even though err != nil,
+  a pointer/struct field was never initialized, or a nil receiver/interface
+  was passed where a concrete value was expected.
+base_confidence: 0.85
+tags: ["null"]
+fixes:
+  - summary: Check err before using the value and return early (if err != nil { return …})
+    tradeoff: Idiomatic and local; callers must handle the returned error
+  - summary: Construct via a New… constructor that guarantees all pointer fields are non-nil
+    tradeoff: Removes the bug class for that type; requires an API change

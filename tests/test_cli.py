@@ -73,10 +73,10 @@ def test_missing_patterns_dir_exit_1():
     assert r.exit_code == 1 and "Pattern directory not found" in r.output
 
 def test_detected_family_without_analyzer_says_so():
-    # Go is not yet registered; use it as the "detected but no analyzer" family
-    go = "panic: runtime error: invalid memory address\n\ngoroutine 1 [running]:\nmain.main()\n\t/srv/svc/main.go:9 +0x1d\n"
-    r = R.invoke(app, ["diagnose", "-"], input=go)
-    assert r.exit_code == 2 and "Detected go" in r.output and "no analyzer" in r.output
+    # Rust is not yet registered; use it as the "detected but no analyzer" family
+    rust = "thread 'main' panicked at src/main.rs:4:37:\ncalled `Option::unwrap()` on a `None` value\n"
+    r = R.invoke(app, ["diagnose", "-"], input=rust)
+    assert r.exit_code == 2 and "Detected rust" in r.output and "no analyzer" in r.output
 
 @pytest.mark.parametrize("enc", ["utf-16", "utf-16-le", "utf-16-be", "utf-32", "utf-8-sig"])
 def test_bom_and_utf16_input_decoded(tmp_path, enc):

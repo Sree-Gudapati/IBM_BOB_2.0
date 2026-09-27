@@ -1,0 +1,17 @@
+id: go.connection_refused
+family: go
+error_type: panic
+message_regex: "connection refused"
+category: dependency
+root_cause: >
+  A TCP dial to a dependency was refused because the target isn't listening:
+  the service is down, the host/port is misconfigured, or the dependency
+  isn't ready yet at startup. The startup code panicked on the dial error
+  instead of returning it.
+base_confidence: 0.75
+tags: [connectivity]
+fixes:
+  - summary: Retry the dial with exponential backoff and a readiness probe before marking the service ready
+    tradeoff: Resilient to slow starts; slower startup under normal conditions
+  - summary: Fix the host/port in config or service discovery so the dial targets the correct address
+    tradeoff: Config-only fix; doesn't help if the dependency is genuinely not ready yet

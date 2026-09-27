@@ -1,0 +1,16 @@
+id: go.nil_map_write
+family: go
+error_type: panic
+message_regex: "assignment to entry in nil map"
+category: code
+root_cause: >
+  A write was attempted on a map that was declared but never initialized
+  with make(). This commonly occurs on a struct field of map type that
+  is left as its zero value (nil) when the struct is constructed.
+base_confidence: 0.90
+tags: ["null"]
+fixes:
+  - summary: Initialize the map in the constructor or New function with make(map[K]V)
+    tradeoff: Simple and correct; callers get a ready-to-use struct
+  - summary: Lazy-initialize the map inside the method before writing, guarded by a nil check
+    tradeoff: Local fix; requires the same nil check in every writing method

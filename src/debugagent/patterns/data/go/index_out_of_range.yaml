@@ -1,0 +1,15 @@
+id: go.index_out_of_range
+family: go
+error_type: runtime error
+message_regex: "index out of range"
+category: code
+root_cause: >
+  An index >= len of the slice/array was used: off-by-one error, or code
+  assumed the collection was non-empty without checking first.
+base_confidence: 0.85
+tags: [off-by-one, empty]
+fixes:
+  - summary: Add a bounds/len check before indexing and handle the empty case explicitly
+    tradeoff: Local fix; must decide what the empty case should return or do
+  - summary: Range over the slice instead of indexing by position
+    tradeoff: Removes the bug class for iteration; larger refactor for random-access patterns

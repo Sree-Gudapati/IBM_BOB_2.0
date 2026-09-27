@@ -1,0 +1,15 @@
+id: go.deadlock
+family: go
+error_type: fatal error
+message_regex: "all goroutines are asleep - deadlock"
+category: code
+root_cause: >
+  Every goroutine is permanently blocked: an unbuffered channel send with no
+  receiver, a missing close(), or a WaitGroup Add/Done count mismatch.
+base_confidence: 0.90
+tags: [concurrency, deadlock]
+fixes:
+  - summary: Ensure every channel send has a corresponding receiver and every close() is called exactly once; verify wg.Add matches wg.Done calls
+    tradeoff: Root fix; requires understanding the goroutine lifecycle
+  - summary: Use buffered channels or select with ctx.Done() so no goroutine blocks indefinitely
+    tradeoff: More resilient; can hide logic bugs if the buffer masks a missing consumer

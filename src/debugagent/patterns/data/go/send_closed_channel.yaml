@@ -1,0 +1,16 @@
+id: go.send_closed_channel
+family: go
+error_type: panic
+message_regex: "send on closed channel"
+category: code
+root_cause: >
+  A goroutine sent to a channel after another goroutine had already closed
+  it. This usually means channel ownership is unclear — multiple parties
+  believe they have the right to send or close.
+base_confidence: 0.90
+tags: [concurrency]
+fixes:
+  - summary: Establish a single owner for the channel who is the sole closer; use sync.Once if multiple paths may close
+    tradeoff: Correct by design; requires a clear ownership model
+  - summary: Stop senders via ctx cancellation before the channel is closed, so no send races the close
+    tradeoff: Safe shutdown pattern; requires threading context through sender goroutines

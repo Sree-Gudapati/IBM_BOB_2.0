@@ -1,0 +1,15 @@
+id: go.slice_bounds
+family: go
+error_type: runtime error
+message_regex: "slice bounds out of range"
+category: code
+root_cause: >
+  A slice expression s[i:j] or s[:n] exceeded len/cap, typically from an
+  untrusted length value in parsing, or an off-by-one in a manual slice.
+base_confidence: 0.85
+tags: [off-by-one]
+fixes:
+  - summary: Clamp with min(n, len(b)) before slicing to avoid exceeding capacity
+    tradeoff: Safe; may silently truncate data — log or error if truncation is unexpected
+  - summary: Validate lengths at the parse boundary and return an error for out-of-range values
+    tradeoff: Correct and explicit; requires more code and callers must handle the error

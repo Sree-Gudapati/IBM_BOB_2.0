@@ -27,8 +27,8 @@ def test_oversized_input_notes_truncation():
 
 
 def test_family_without_subagent_is_noted():
-    # Go is not yet registered; use it as the "detected but no analyzer" family
-    go = "panic: runtime error: invalid memory address\n\ngoroutine 1 [running]:\nmain.main()\n\t/srv/svc/main.go:9 +0x1d\n"
-    d = diagnose(SIMPLE + "\n" + go, build_subagents())
+    # Rust is not yet registered; use it as the "detected but no analyzer" family
+    rust = "thread 'main' panicked at src/main.rs:4:37:\ncalled `Option::unwrap()` on a `None` value\n"
+    d = diagnose(SIMPLE + "\n" + rust, build_subagents())
     assert d.top.pattern_id == "python.attribute_error.none_type"
-    assert any("no go analyzer" in n for n in d.notes)
+    assert any("no rust analyzer" in n for n in d.notes)

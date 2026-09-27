@@ -426,3 +426,65 @@ The partial commit `be56a0d` registered `Family.NODE: node.parse` and extended d
 | `File "<string>"` alone doesn't match the Python signature; `[main] INFO` order; leading `ERROR` word stripped | Low / future |
 
 ---
+
+## Task 6 — Go Parser and 14 Go Patterns
+
+**Status:** ✅ Complete (uncommitted)
+
+### What was done
+
+Added the Go parser and 14 Go patterns. Go panics and fatal errors now flow through the full pipeline to a diagnosis.
+
+### Files created
+
+| File | Description |
+|---|---|
+| `src/debugagent/parsers/go.py` | Line-by-line parser. `panic: runtime error: …` → `error_type="runtime error"`. `fatal error: …` → `error_type="fatal error"`. Any other `panic: …` → `error_type="panic"`. Trailing `!` and ` [recovered]` suffixes stripped. Only the **first goroutine block** is collected; `created by` lines and all subsequent goroutines are skipped. `::h<hex>` mangling suffixes stripped from function names. |
+| `src/debugagent/patterns/data/go/*.yaml` | 14 Go patterns (see table below) |
+| `tests/parsers/test_go.py` | 9 parser tests |
+| `tests/patterns/test_go_patterns.py` | 17 tests (14 golden + min-10 count + unknown + end-to-end) |
+
+**Modified:** `src/debugagent/parsers/__init__.py` — registered `Family.GO: go.parse`
+**Modified:** `tests/test_cli.py` and `tests/test_orchestrator.py` — sentinel for "unregistered family" updated from Go → Rust
+
+### Go patterns (14)
+
+| Pattern ID | Error type | Message regex | Category | Confidence |
+|---|---|---|---|---|
+| `go.nil_pointer` | `runtime error` | `nil pointer dereference` | code | 0.85 |
+| `go.index_out_of_range` | `runtime error` | `index out of range` | code | 0.85 |
+| `go.slice_bounds` | `runtime error` | `slice bounds out of range` | code | 0.85 |
+| `go.divide_by_zero` | `runtime error` | `integer divide by zero` | code | 0.85 |
+| `go.deadlock` | `fatal error` | `all goroutines are asleep - deadlock` | code | 0.90 |
+| `go.concurrent_map` | `fatal error` | `concurrent map (writes\|…)` | code | 0.95 |
+| `go.stack_overflow` | `fatal error` | `stack overflow` | code | 0.85 |
+| `go.oom` | `fatal error` | `out of memory` | resource | 0.85 |
+| `go.interface_conversion` | `panic` | `interface conversion` | code | 0.85 |
+| `go.send_closed_channel` | `panic` | `send on closed channel` | code | 0.90 |
+| `go.close_closed_channel` | `panic` | `close of (closed\|nil) channel` | code | 0.90 |
+| `go.nil_map_write` | `panic` | `assignment to entry in nil map` | code | 0.90 |
+| `go.deadline_exceeded` | `panic` | `context deadline exceeded\|i/o timeout\|…` | dependency | 0.70 |
+| `go.connection_refused` | `panic` | `connection refused` | dependency | 0.75 |
+
+### Test results
+
+```
+199 passed in 4.10s
+```
+
+### Key design decisions
+
+- **First goroutine only:** Go prints all goroutines on a panic; only the panicking goroutine (the first block) is parsed. `created by` lines are skipped as they name the spawner, not the crashing frame.
+- **Recovered panics:** a `[recovered]` suffix is stripped and the nested re-panic line (`panic: again`) is discarded, keeping the original error.
+- **`::h<hex>` stripping:** Rust-style hash suffixes occasionally appear in cgo frames; they're stripped to produce clean function names.
+- **Sentinel test updated:** the "detected family with no analyzer" tests previously used Go as the unregistered probe; they now use Rust.
+
+### Still deferred
+
+| Item | Owning task |
+|---|---|
+| `short_error_type` doesn't split on `::` for Rust | Task 7 |
+| `File "<string>"` alone doesn't match the Python signature; `[main] INFO` order | Low / future |
+
+---
+

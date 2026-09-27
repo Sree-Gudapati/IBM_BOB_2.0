@@ -1,0 +1,16 @@
+id: go.concurrent_map
+family: go
+error_type: fatal error
+message_regex: "concurrent map (writes|read and map write|iteration and map write)"
+category: code
+root_cause: >
+  Unsynchronized concurrent map access (a data race). Multiple goroutines
+  read or write the same map without synchronization. Run with -race to
+  identify all racing goroutines.
+base_confidence: 0.95
+tags: [concurrency, race]
+fixes:
+  - summary: Guard the map with sync.RWMutex (Lock for writes, RLock for reads)
+    tradeoff: Simple and correct; lock contention can be a bottleneck under high concurrency
+  - summary: Use sync.Map or shard ownership so each map belongs to exactly one goroutine
+    tradeoff: Scales better under contention; different API, requires more refactoring

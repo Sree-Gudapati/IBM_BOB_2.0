@@ -1,0 +1,15 @@
+id: go.divide_by_zero
+family: go
+error_type: runtime error
+message_regex: "integer divide by zero"
+category: code
+root_cause: >
+  Integer division by a zero divisor, typically an empty count, an unset
+  config value, or a denominator that was not validated before use.
+base_confidence: 0.85
+tags: [arithmetic]
+fixes:
+  - summary: Guard the divisor with an explicit check and return an error if it is zero
+    tradeoff: Local and clear; callers must handle the error path
+  - summary: Validate config/inputs at startup and fail fast if any required non-zero value is absent
+    tradeoff: Catches the problem earlier; requires a validation layer at program start

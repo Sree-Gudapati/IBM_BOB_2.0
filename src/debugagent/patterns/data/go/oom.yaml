@@ -1,0 +1,16 @@
+id: go.oom
+family: go
+error_type: fatal error
+message_regex: "out of memory"
+category: resource
+root_cause: >
+  The process exhausted available memory: a goroutine leak, an unbounded
+  in-memory buffer or cache, reading a very large file into memory at once,
+  or a container memory limit that is too small for the workload.
+base_confidence: 0.85
+tags: [memory, leak]
+fixes:
+  - summary: Profile with pprof heap and goroutine endpoints to find the retaining path and fix the leak
+    tradeoff: Root fix; requires profiling access and investigation time
+  - summary: Set GOMEMLIMIT and raise the container memory limit to match the actual working set
+    tradeoff: Fast relief; only delays recurrence if a leak is the cause
