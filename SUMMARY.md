@@ -50,9 +50,9 @@ Two high-severity bugs found by extended test review were fixed before Task 2 be
 ### Fix 1 — `normalize()` was eating payload indentation (High)
 
 **Root cause:** `_PREFIX` used `\s+` at the end of each component, so `ERROR [billing]   File "app.py"` consumed the two-space indent that belongs to the `File` line.
-**Fix:** Each prefix component now ends with a single literal space (` `), and the whole pattern ends with `(?=\S)` so the regex only fires when non-space payload follows. Payload indentation is never touched.
-**Also fixed in same change:** `_ANSI` extended to strip OSC sequences (terminal title/link codes); level matching made case-insensitive (`re.IGNORECASE`).
-**Pinning test:** `test_normalize_preserves_indentation_after_prefix_strip`
+**First attempt (commit `36e1b0d`) introduced two regressions:** a trailing `(?=\S)` lookahead made the regex back off on indented payloads, leaving `[billing]   File "app.py"` with the service tag still attached; and `re.IGNORECASE` turned the payload's own `Error:` / `Warning:` into a "level", so `Error: boom` became `boom`.
+**Final fix (uncommitted):** Each prefix component consumes exactly one literal space and the lookahead is gone, so extra indentation stays with the payload. Levels match only as UPPERCASE (optional brackets/colon) or lowercase *without* a colon; mixed-case `Error:` is never stripped. `_ANSI` also strips OSC sequences (terminal title/link codes).
+**Pinning tests:** `test_normalize_preserves_indentation_after_prefix_strip` (now exact line equality), `test_normalize_preserves_tab_indentation_after_prefix_strip`, `test_normalize_strips_lowercase_and_uppercase_colon_levels`, `test_normalize_never_eats_payload_error_type`
 
 ### Fix 2 — Node ECONNREFUSED traces not detected (High)
 
@@ -63,7 +63,7 @@ Two high-severity bugs found by extended test review were fixed before Task 2 be
 ### Test results after fixes
 
 ```
-10 passed in 0.02s
+13 passed in 0.05s  (coverage 99%, mypy --strict clean)
 ```
 
 ### Deferred items (to be fixed in their owning tasks)
@@ -74,8 +74,10 @@ Two high-severity bugs found by extended test review were fixed before Task 2 be
 | 4 | Medium | `short_error_type` doesn't split on `::` for Rust | Task 7 |
 | 5a | Low | Message starting with a level word loses that word | Task 1 cleanup (acceptable) |
 | 5b | Low | `[main] INFO x` not stripped (service tag before level) | Future |
-| 5c | Low | Lowercase levels not stripped | Fixed in Fix 1 above (`re.IGNORECASE`) |
+| 5c | Low | Lowercase levels not stripped | Fixed in Fix 1 (lowercase without colon) |
 | 5d | Low | OSC ANSI sequences survive | Fixed in Fix 1 above |
 | 5e | Low | `File "<string>"` / `File "<stdin>"` don't match Python sig alone | Task 2 |
+| 5f | Low | Node paths with spaces; indented raw `panic:` not detected | Tasks 5 / 6 |
+| 5g | Low | 10 auto-fixable ruff style issues | Task 1 cleanup |
 
 ---
