@@ -1,0 +1,15 @@
+id: rust.index_oob
+family: rust
+error_type: panic
+message_regex: "index out of bounds: the len is \\d+ but the index is \\d+"
+category: code
+root_cause: >
+  A slice or Vec was indexed at a position >= its length: off-by-one error
+  or code assumed the collection was non-empty.
+base_confidence: 0.85
+tags: [off-by-one, empty]
+fixes:
+  - summary: Use .get(i) which returns Option and handle the None case
+    tradeoff: Safe; requires deciding what to do when the element is absent
+  - summary: Iterate with .iter() instead of indexing by position
+    tradeoff: Removes the bug class for iteration; larger refactor for random-access patterns

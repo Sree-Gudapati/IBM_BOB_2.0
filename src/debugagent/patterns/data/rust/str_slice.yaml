@@ -1,0 +1,16 @@
+id: rust.str_slice
+family: rust
+error_type: panic
+message_regex: "is not a char boundary|range end index \\d+ out of range|slice index starts at"
+category: code
+root_cause: >
+  A string or byte slice range is invalid: the index falls inside a multi-byte
+  UTF-8 character, or past the end of the string. Byte-level indexing into
+  UTF-8 strings is the root cause.
+base_confidence: 0.80
+tags: [off-by-one, encoding]
+fixes:
+  - summary: Use char_indices() to iterate by character, or .get(range) which returns Option
+    tradeoff: Safe; must handle the None case from .get()
+  - summary: Operate on bytes explicitly with as_bytes() where the data is guaranteed ASCII-only
+    tradeoff: Fast and simple; must enforce the ASCII invariant at the boundary

@@ -1,0 +1,16 @@
+id: rust.timeout
+family: rust
+error_type: panic
+message_regex: "timed out|TimedOut|deadline has elapsed|Elapsed"
+category: dependency
+root_cause: >
+  A downstream call timed out and the error was unwrapped instead of being
+  handled. The callee is the likely fault; the caller should retry or degrade
+  gracefully.
+base_confidence: 0.86
+tags: [timeout]
+fixes:
+  - summary: Handle the timeout error with retry and exponential backoff
+    tradeoff: Resilient; can amplify load on the callee during an outage
+  - summary: Fix callee latency and tune the timeout value for the expected p99
+    tradeoff: Root fix; cross-team effort

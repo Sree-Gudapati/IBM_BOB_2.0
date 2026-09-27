@@ -1,0 +1,16 @@
+id: rust.explicit
+family: rust
+error_type: panic
+message_regex: "explicitly panicked|not yet implemented|not implemented|entered unreachable code"
+category: code
+root_cause: >
+  A panic!(), todo!(), unimplemented!(), or unreachable!() macro was reached
+  in production: an unfinished code path, a missing case in a match, or a
+  branch that was assumed to be unreachable.
+base_confidence: 0.75
+tags: [todo]
+fixes:
+  - summary: Implement the missing branch or case that triggered the macro
+    tradeoff: Correct fix; requires understanding what the missing case should do
+  - summary: Return a Result::Err instead of panicking for unexpected inputs at a service boundary
+    tradeoff: More resilient; requires changing the function signature and all callers

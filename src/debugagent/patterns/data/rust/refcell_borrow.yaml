@@ -1,0 +1,16 @@
+id: rust.refcell_borrow
+family: rust
+error_type: panic
+message_regex: "already (mutably )?borrowed|BorrowMutError|BorrowError"
+category: code
+root_cause: >
+  A RefCell runtime borrow conflict: borrow_mut() was called while another
+  borrow (mutable or immutable) was still alive, typically across a callback,
+  a re-entrant call, or a loop that holds the guard.
+base_confidence: 0.85
+tags: [borrow, concurrency]
+fixes:
+  - summary: Shorten the borrow scope by dropping the guard before calling any code that might re-borrow
+    tradeoff: Targeted and minimal; requires identifying where the guard is kept too long
+  - summary: Restructure ownership to avoid RefCell, using Cell for Copy types or message passing for shared state
+    tradeoff: Removes the bug class; larger refactor and possibly a different API

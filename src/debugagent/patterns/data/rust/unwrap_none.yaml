@@ -1,0 +1,15 @@
+id: rust.unwrap_none
+family: rust
+error_type: panic
+message_regex: "called `Option::unwrap\\(\\)` on a `None` value"
+category: code
+root_cause: >
+  unwrap() was called on a None Option: a lookup, parse, or optional field
+  returned nothing and the code assumed it always has a value.
+base_confidence: 0.90
+tags: ["null", unwrap]
+fixes:
+  - summary: Use ? with .ok_or(...)  or ok_or_else to propagate a typed error to the caller
+    tradeoff: Idiomatic; changes the function signature to return Result
+  - summary: Use unwrap_or or unwrap_or_default where a safe default exists
+    tradeoff: Local fix; may silently hide missing data

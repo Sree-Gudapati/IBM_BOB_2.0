@@ -1,0 +1,16 @@
+id: rust.connection_refused
+family: rust
+error_type: panic
+message_regex: "Connection refused|ConnectionRefused"
+category: dependency
+root_cause: >
+  The dependency isn't listening: it is down, the host/port is misconfigured,
+  or it isn't ready yet at startup. The error was unwrapped instead of being
+  handled, causing the panic.
+base_confidence: 0.88
+tags: [connectivity]
+fixes:
+  - summary: Fix the host/port in config or service discovery to point at the correct address
+    tradeoff: Config-only fix; doesn't help if the dependency is genuinely not ready yet
+  - summary: Retry the connection with exponential backoff and a readiness probe before serving traffic
+    tradeoff: Resilient to slow starts; slower startup, more code

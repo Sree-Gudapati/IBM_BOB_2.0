@@ -1,0 +1,16 @@
+id: rust.overflow
+family: rust
+error_type: panic
+message_regex: "attempt to (add|subtract|multiply|negate|shift left|shift right) with overflow"
+category: code
+root_cause: >
+  Integer overflow was detected in a debug build (release builds wrap
+  silently). Underflowing usize subtraction is the classic case: subtracting
+  a larger value from a smaller one wraps around to a huge number.
+base_confidence: 0.85
+tags: [arithmetic]
+fixes:
+  - summary: Use checked_*, saturating_*, or wrapping_* arithmetic methods to handle overflow explicitly
+    tradeoff: Explicit and correct; more verbose, especially for chains
+  - summary: Widen the integer type or reorder the arithmetic to avoid the overflow condition
+    tradeoff: Targeted; requires understanding the numeric range of inputs

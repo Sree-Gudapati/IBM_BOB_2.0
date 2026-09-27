@@ -1,0 +1,16 @@
+id: rust.unwrap_err
+family: rust
+error_type: panic
+message_regex: "called `Result::unwrap\\(\\)` on an `Err` value"
+category: code
+root_cause: >
+  unwrap() was called on an Err Result: a fallible operation failed and the
+  error was not handled. The Err payload shown in the message is the real
+  underlying cause — look there first.
+base_confidence: 0.85
+tags: [unwrap, error-handling]
+fixes:
+  - summary: Propagate with ? and handle the error at an appropriate boundary
+    tradeoff: Idiomatic; ripples through caller signatures
+  - summary: Replace with expect("context") plus a retry for transient errors
+    tradeoff: Better panic message; still panics — not a production fix

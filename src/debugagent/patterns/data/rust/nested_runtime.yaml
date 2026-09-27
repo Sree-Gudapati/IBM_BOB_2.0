@@ -1,0 +1,16 @@
+id: rust.nested_runtime
+family: rust
+error_type: panic
+message_regex: "Cannot (start|drop) a runtime from within (a|an) (asynchronous )?context|Cannot (start|drop) a runtime from within a runtime"
+category: config
+root_cause: >
+  block_on() or Runtime::new() was called from inside an async context
+  (Tokio), usually because a synchronous wrapper function was called from
+  async code. Tokio forbids nesting runtimes on the same thread.
+base_confidence: 0.90
+tags: [async, tokio]
+fixes:
+  - summary: Make the calling function async and .await the result instead of using block_on
+    tradeoff: Correct and idiomatic; ripples through all callers that must also become async
+  - summary: Use tokio::task::spawn_blocking or block_in_place to run sync code inside async
+    tradeoff: Quick fix; ties up a Tokio worker thread and can cause latency under load

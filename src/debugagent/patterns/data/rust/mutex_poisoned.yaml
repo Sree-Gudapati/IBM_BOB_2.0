@@ -1,0 +1,16 @@
+id: rust.mutex_poisoned
+family: rust
+error_type: panic
+message_regex: "PoisonError|poisoned"
+category: code
+root_cause: >
+  A thread panicked while holding the Mutex, leaving it in a poisoned state.
+  The poison error is a secondary symptom — find and fix the original panic
+  that caused the poisoning.
+base_confidence: 0.87
+tags: [concurrency]
+fixes:
+  - summary: Find and fix the original panic that poisoned the mutex (check the earlier panic in the log)
+    tradeoff: Root fix; requires identifying what panicked inside the lock
+  - summary: Recover with lock().unwrap_or_else(|e| e.into_inner()) if the data is still consistent after the panic
+    tradeoff: Keeps the service running; risks using corrupt state if the panic left data half-updated

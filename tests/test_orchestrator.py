@@ -27,8 +27,9 @@ def test_oversized_input_notes_truncation():
 
 
 def test_family_without_subagent_is_noted():
-    # Rust is not yet registered; use it as the "detected but no analyzer" family
+    # Remove Rust from the subagents dict to simulate an unregistered family
     rust = "thread 'main' panicked at src/main.rs:4:37:\ncalled `Option::unwrap()` on a `None` value\n"
-    d = diagnose(SIMPLE + "\n" + rust, build_subagents())
+    subs = {k: v for k, v in build_subagents().items() if k is not Family.RUST}
+    d = diagnose(SIMPLE + "\n" + rust, subs)
     assert d.top.pattern_id == "python.attribute_error.none_type"
     assert any("no rust analyzer" in n for n in d.notes)

@@ -1,9 +1,11 @@
 import time
 from pathlib import Path
 
+import pytest
 from typer.testing import CliRunner
 
 from debugagent.cli import app
+from debugagent.models import Family
 
 R = CliRunner()
 TRACE = "tests/data/python_none.txt"
@@ -72,8 +74,13 @@ def test_missing_patterns_dir_exit_1():
     r = R.invoke(app, ["diagnose", TRACE, "--patterns", "/no/such/dir"])
     assert r.exit_code == 1 and "Pattern directory not found" in r.output
 
-def test_detected_family_without_analyzer_says_so():
-    # Rust is not yet registered; use it as the "detected but no analyzer" family
+def test_detected_family_without_analyzer_says_so(monkeypatch):
+    # Monkeypatch PARSERS to remove Rust, simulating an unregistered family
+    import debugagent.parsers as _parsers
+    import debugagent.subagent as _subagent
+    orig = dict(_parsers.PARSERS)
+    monkeypatch.setattr(_parsers, "PARSERS", {k: v for k, v in orig.items() if k is not Family.RUST})
+    monkeypatch.setattr(_subagent, "PARSERS", {k: v for k, v in orig.items() if k is not Family.RUST})
     rust = "thread 'main' panicked at src/main.rs:4:37:\ncalled `Option::unwrap()` on a `None` value\n"
     r = R.invoke(app, ["diagnose", "-"], input=rust)
     assert r.exit_code == 2 and "Detected rust" in r.output and "no analyzer" in r.output

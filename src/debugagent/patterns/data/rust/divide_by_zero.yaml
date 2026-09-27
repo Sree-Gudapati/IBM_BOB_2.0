@@ -1,0 +1,15 @@
+id: rust.divide_by_zero
+family: rust
+error_type: panic
+message_regex: "attempt to (divide|calculate the remainder) (by zero|with a divisor of zero)"
+category: code
+root_cause: >
+  Integer division or remainder by zero, typically from an empty count
+  or an unvalidated config value used as a divisor.
+base_confidence: 0.85
+tags: [arithmetic]
+fixes:
+  - summary: Use checked_div and return an error if the divisor is zero
+    tradeoff: Safe and explicit; callers must handle the error path
+  - summary: Validate config and inputs at startup and fail fast if required non-zero values are absent
+    tradeoff: Catches the problem at program start; requires a validation layer
