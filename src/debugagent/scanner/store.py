@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 
 from debugagent.scanner.graph import build_edges
+from debugagent.scanner.history import mine_history
 from debugagent.scanner.languages import scan_services
 from debugagent.scanner.models import CodebaseMap
 
@@ -11,7 +12,8 @@ DEFAULT_MAP_PATH = Path(".debugagent/codebase.json")
 def scan(root: Path, history: bool = True) -> CodebaseMap:
     root = Path(root).resolve()
     services = scan_services(root)
-    return CodebaseMap(str(root), services, build_edges(root, services), {})
+    hist = mine_history(root, services) if history else {}
+    return CodebaseMap(str(root), services, build_edges(root, services), hist)
 
 
 def save_map(m: CodebaseMap, path: Path) -> None:

@@ -13,6 +13,8 @@ SYMPTOM_FACTOR = 0.6
 NO_MAP_SYMPTOM_FACTOR = 0.8
 SOURCE_BOOST = 0.05
 CONFIDENCE_CAP = 0.99
+HISTORY_MIN_COUNT = 3
+HISTORY_BOOST = 0.05
 _NOT_SOURCE = ("dependency", "unknown")
 
 
@@ -87,13 +89,34 @@ def _without_map(hyps: list[Hypothesis]) -> list[Hypothesis]:
     ]
 
 
+def _history_boost(h: Hypothesis, cb: "CodebaseMap") -> Hypothesis:
+    counts = cb.history.get(h.service or "", {})
+    hits = sorted(
+        ((counts[t], t) for t in h.tags if counts.get(t, 0) >= HISTORY_MIN_COUNT),
+        reverse=True,
+    )
+    if not hits:
+        return h
+    n, tag = hits[0]
+    return replace(
+        h,
+        confidence=min(CONFIDENCE_CAP, round(h.confidence + HISTORY_BOOST, 4)),
+        evidence=h.evidence + (
+            f"{h.service} has {n} past fix commits tagged '{tag}' — a recurring weakness",
+        ),
+    )
+
+
 def aggregate(
     hyps: Iterable[Hypothesis],
     codebase: "CodebaseMap | None" = None,
 ) -> tuple[Hypothesis, ...]:
     hs = list(hyps)
     if codebase is not None:
-        hs = _with_map([_attribute(h, codebase) for h in hs], codebase)
+        hs = _with_map(
+            [_history_boost(_attribute(h, codebase), codebase) for h in hs],
+            codebase,
+        )
     else:
         hs = _without_map(hs)
     best: dict[_Key, Hypothesis] = {}

@@ -49,3 +49,18 @@ def test_attribution_for_python(mini_system):
         codebase=scan(mini_system, history=False),
     )
     assert d.top.service == "billing"
+
+
+def test_history_boost_for_recurring_weakness(mini_system):
+    cb = scan(mini_system, history=False)
+    cb.history["billing"] = {"null": 4}
+    d = diagnose(open("tests/data/python_none.txt").read(), build_subagents(), codebase=cb)
+    assert d.top.service == "billing" and d.top.confidence == 0.9
+    assert any("4 past fix commits tagged 'null'" in e for e in d.top.evidence)
+
+
+def test_history_below_threshold_no_boost(mini_system):
+    cb = scan(mini_system, history=False)
+    cb.history["billing"] = {"null": 2}
+    d = diagnose(open("tests/data/python_none.txt").read(), build_subagents(), codebase=cb)
+    assert d.top.confidence == 0.85
