@@ -8,7 +8,7 @@ PATS = load_patterns(DEFAULT_PATTERN_DIR)
 F = (Frame("/srv/inventory/store.go", 42, "main.(*Store).Get"),)
 
 
-@pytest.mark.parametrize("etype,msg,expected", [
+GO_CASES = [
     ("runtime error", "invalid memory address or nil pointer dereference", "go.nil_pointer"),
     ("runtime error", "index out of range [5] with length 3", "go.index_out_of_range"),
     ("runtime error", "slice bounds out of range [:5] with capacity 3", "go.slice_bounds"),
@@ -23,7 +23,9 @@ F = (Frame("/srv/inventory/store.go", 42, "main.(*Store).Get"),)
     ("panic", "assignment to entry in nil map", "go.nil_map_write"),
     ("panic", "context deadline exceeded", "go.deadline_exceeded"),
     ("panic", "dial tcp 10.0.0.5:5432: connect: connection refused", "go.connection_refused"),
-])
+]
+
+@pytest.mark.parametrize("etype,msg,expected", GO_CASES)
 def test_each_go_pattern_matches(etype, msg, expected):
     h = match_trace(ParsedTrace(Family.GO, etype, msg, F), PATS)
     assert h.pattern_id == expected and 2 <= len(h.fixes) <= 3 and "func TestRepro_Get" in h.repro_test

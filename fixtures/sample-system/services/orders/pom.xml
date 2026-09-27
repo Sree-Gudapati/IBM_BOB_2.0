@@ -1,0 +1,1 @@
+<project><artifactId>orders-service</artifactId><dependencies><dependency><artifactId>spring-boot-starter-web</artifactId></dependency><dependency><artifactId>HikariCP</artifactId></dependency></dependencies></project>

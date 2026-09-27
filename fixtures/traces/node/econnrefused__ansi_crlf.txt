@@ -1,0 +1,3 @@
+[31mError: connect ECONNREFUSED 10.0.3.7:8080[0m
+[31m    at getUser (/srv/web/src/users.ts:14:5)[0m
+[31m    at handler (/srv/web/src/api.ts:30:5)[0m

@@ -130,3 +130,42 @@ def scan(
         calls = ", ".join(m.edges.get(name, [])) or "-"
         typer.echo(f"{name:<20} {s.family.value:<7} {','.join(s.frameworks) or '-':<22} calls: {calls}")
     typer.echo(f"Wrote {dest}")
+
+
+@app.command("eval")
+def eval_cmd(
+    corpus: Path = typer.Argument(..., help="Directory containing traces and labels.yaml"),
+    codebase: Optional[Path] = typer.Option(None, "--codebase"),
+    patterns: list[Path] = typer.Option([], "--patterns"),  # noqa: B008
+    min_accuracy: float = typer.Option(0.85, "--min-accuracy"),
+    min_coverage: float = typer.Option(0.95, "--min-coverage"),
+    max_subagent_s: float = typer.Option(2.0, "--max-subagent-s"),
+) -> None:
+    """Measure accuracy, coverage and latency on a labeled trace corpus."""
+    from debugagent.evaluation import evaluate
+    if not corpus.is_dir():
+        raise _fail(f"Corpus directory not found: {corpus}", 2)
+    r = evaluate(corpus, build_subagents(patterns), codebase=_load_codebase(codebase))
+    typer.echo(
+        f"cases {len(r.results)}  accuracy {r.accuracy:.1%}  coverage {r.coverage:.1%}  "
+        f"p95 {r.p95_latency_s * 1000:.0f} ms  max subagent {r.max_subagent_s * 1000:.0f} ms"
+    )
+    for fam, acc in r.per_family.items():
+        typer.echo(f"  {fam:<8} {acc:.1%}")
+    for c in (c for c in r.results if not c.correct):
+        typer.echo(
+            f"  MISS {c.file}: expected {c.expected}"
+            f"{'@' + c.service_expected if c.service_expected else ''}, "
+            f"got {c.got}{'@' + c.service_got if c.service_got else ''}"
+        )
+    failures = []
+    if r.accuracy < min_accuracy:
+        failures.append(f"accuracy {r.accuracy:.1%} < {min_accuracy:.1%}")
+    if r.coverage < min_coverage:
+        failures.append(f"coverage {r.coverage:.1%} < {min_coverage:.1%}")
+    if r.max_subagent_s >= max_subagent_s:
+        failures.append(f"max subagent {r.max_subagent_s:.2f}s >= {max_subagent_s:.2f}s")
+    if failures:
+        typer.echo("FAIL: " + "; ".join(failures), err=True)
+        raise typer.Exit(1)
+    typer.echo("PASS")

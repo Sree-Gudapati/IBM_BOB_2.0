@@ -1,0 +1,9 @@
+thread 'main' panicked at src/ledger.rs:27:5:
+called `Result::unwrap()` on an `Err` value: PoisonError { .. }
+stack backtrace:
+   0: rust_begin_unwind
+             at /rustc/abc/library/std/src/panicking.rs:645:5
+   1: ledger_svc::post_entry
+             at ./src/ledger.rs:27:5
+   2: ledger_svc::main
+             at ./src/main.rs:9:5

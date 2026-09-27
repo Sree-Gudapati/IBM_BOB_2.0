@@ -1,0 +1,3 @@
+2026-09-26T10:00:00.000Z ERROR [web] Error: socket hang up
+2026-09-26T10:00:00.000Z ERROR [web]     at getUser (/srv/web/src/users.ts:14:5)
+2026-09-26T10:00:00.000Z ERROR [web]     at handler (/srv/web/src/api.ts:30:5)

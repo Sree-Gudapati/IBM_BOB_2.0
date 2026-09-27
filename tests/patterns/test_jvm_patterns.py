@@ -9,7 +9,7 @@ from debugagent.patterns.matcher import match_trace
 PATS = load_patterns(DEFAULT_PATTERN_DIR)
 F = (Frame("Orders.java", 10, "Orders.place", "com.acme.Orders"),)
 
-@pytest.mark.parametrize("etype,msg,expected", [
+JVM_CASES = [
     ("java.lang.NullPointerException", 'Cannot invoke "String.length()" because "n" is null', "jvm.npe.helpful"),
     ("java.lang.NullPointerException", "", "jvm.npe"),
     ("java.util.NoSuchElementException", "No value present", "jvm.optional_get_empty"),
@@ -24,7 +24,9 @@ F = (Frame("Orders.java", 10, "Orders.place", "com.acme.Orders"),)
     ("java.time.format.DateTimeParseException", "Text '2026-09-26T10:00' could not be parsed", "jvm.datetime_parse"),
     ("java.lang.ArrayIndexOutOfBoundsException", "Index 3 out of bounds for length 3", "jvm.index_out_of_bounds"),
     ("java.lang.IllegalStateException", "not started", "jvm.illegal_argument_state"),
-])
+]
+
+@pytest.mark.parametrize("etype,msg,expected", JVM_CASES)
 def test_each_jvm_pattern_matches(etype, msg, expected):
     h = match_trace(ParsedTrace(Family.JVM, etype, msg, F), PATS)
     assert h.pattern_id == expected and 2 <= len(h.fixes) <= 3 and "@Test" in h.repro_test

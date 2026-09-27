@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "/srv/billing/app/api.py", line 20, in handle
+    pass
+  File "/srv/billing/app/invoice.py", line 7, in build
+    pass
+requests.exceptions.ReadTimeout: HTTPConnectionPool read timed out

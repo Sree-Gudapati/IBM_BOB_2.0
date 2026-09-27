@@ -1,0 +1,7 @@
+panic: interface conversion: interface {} is string, not int
+
+goroutine 1 [running]:
+main.(*Store).Get(...)
+	/srv/inventory/store.go:42 +0x1d
+main.handler(...)
+	/srv/inventory/main.go:18 +0x1d

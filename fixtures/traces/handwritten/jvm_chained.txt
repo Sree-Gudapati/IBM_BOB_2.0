@@ -1,0 +1,12 @@
+2026-09-26T10:00:01Z ERROR [orders] Request failed
+org.springframework.web.util.NestedServletException: Request processing failed; nested exception is java.lang.IllegalStateException: pricing failed
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014)
+	at com.acme.orders.api.OrderController.place(OrderController.kt:31)
+Caused by: java.lang.IllegalStateException: pricing failed
+	at com.acme.orders.pricing.Pricer.price(Pricer.java:55)
+	... 12 more
+Caused by: java.lang.NullPointerException: Cannot invoke "String.length()" because "customer.name" is null
+	at com.acme.orders.pricing.Discounts.forName(Discounts.java:18)
+	at com.acme.orders.pricing.Pricer.price(Pricer.java:52)
+	at java.base/java.util.Optional.map(Optional.java:260)
+	... 12 more

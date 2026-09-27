@@ -1,0 +1,9 @@
+[31mthread 'main' panicked at src/ledger.rs:27:5:[0m
+[31malready mutably borrowed: BorrowError[0m
+[31mstack backtrace:[0m
+[31m   0: rust_begin_unwind[0m
+[31m             at /rustc/abc/library/std/src/panicking.rs:645:5[0m
+[31m   1: ledger_svc::post_entry[0m
+[31m             at ./src/ledger.rs:27:5[0m
+[31m   2: ledger_svc::main[0m
+[31m             at ./src/main.rs:9:5[0m

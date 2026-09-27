@@ -1,0 +1,3 @@
+[project]
+name = "billing"
+dependencies = ["fastapi>=0.110", "requests==2.32.0"]

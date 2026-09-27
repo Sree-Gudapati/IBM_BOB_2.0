@@ -1,0 +1,7 @@
+2026-09-26T10:00:00.000Z ERROR [inventory] fatal error: runtime: out of memory
+2026-09-26T10:00:00.000Z ERROR [inventory] 
+2026-09-26T10:00:00.000Z ERROR [inventory] goroutine 1 [running]:
+2026-09-26T10:00:00.000Z ERROR [inventory] main.(*Store).Get(...)
+2026-09-26T10:00:00.000Z ERROR [inventory] 	/srv/inventory/store.go:42 +0x1d
+2026-09-26T10:00:00.000Z ERROR [inventory] main.handler(...)
+2026-09-26T10:00:00.000Z ERROR [inventory] 	/srv/inventory/main.go:18 +0x1d

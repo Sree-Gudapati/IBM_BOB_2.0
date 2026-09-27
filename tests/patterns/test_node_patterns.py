@@ -12,7 +12,7 @@ from debugagent.subagent import build_subagents
 PATS = load_patterns(DEFAULT_PATTERN_DIR)
 F = (Frame("/srv/web/src/api.ts", 3, "handler"),)
 
-@pytest.mark.parametrize("etype,msg,expected", [
+NODE_CASES = [
     ("TypeError", "Cannot read properties of undefined (reading 'id')", "node.undefined_property"),
     ("TypeError", "client.fetchUser is not a function", "node.not_a_function"),
     ("ReferenceError", "window is not defined", "node.reference_error"),
@@ -26,7 +26,9 @@ F = (Frame("/srv/web/src/api.ts", 3, "handler"),)
     ("FatalError", "Reached heap limit Allocation failed - JavaScript heap out of memory", "node.heap_oom"),
     ("Error", "[ERR_UNHANDLED_REJECTION] This error originated either by throwing inside of an async function",
      "node.unhandled_rejection"),
-])
+]
+
+@pytest.mark.parametrize("etype,msg,expected", NODE_CASES)
 def test_each_node_pattern_matches(etype, msg, expected):
     h = match_trace(ParsedTrace(Family.NODE, etype, msg, F), PATS)
     assert h.pattern_id == expected and 2 <= len(h.fixes) <= 3 and h.repro_test

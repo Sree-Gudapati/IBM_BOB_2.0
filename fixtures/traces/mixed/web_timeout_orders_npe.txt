@@ -1,0 +1,6 @@
+2026-09-26T10:00:00.000Z ERROR [web] AxiosError: timeout of 5000ms exceeded
+2026-09-26T10:00:00.000Z ERROR [web]     at getUser (/srv/web/src/users.ts:14:5)
+2026-09-26T10:00:00.000Z ERROR [web]     at handler (/srv/web/src/api.ts:30:5)
+2026-09-26T10:00:00.000Z ERROR [orders] java.lang.NullPointerException: Cannot invoke "String.length()" because "n" is null
+2026-09-26T10:00:00.000Z ERROR [orders] 	at com.acme.orders.pricing.Discounts.forName(Discounts.java:18)
+2026-09-26T10:00:00.000Z ERROR [orders] 	at com.acme.orders.pricing.Pricer.price(Pricer.java:52)

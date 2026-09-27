@@ -1,0 +1,16 @@
+Error: failed to load user 42
+    at loadUser (/srv/web/src/users.ts:20:11)
+    at async handler (/srv/web/src/api.ts:30:5) {
+  [cause]: TypeError: fetch failed
+      at node:internal/deps/undici/undici:13185:13
+      at async fetchUser (/srv/web/src/client.ts:8:15) {
+    [cause]: Error: connect ECONNREFUSED 10.0.3.7:8080
+        at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1606:16) {
+      errno: -111,
+      code: 'ECONNREFUSED',
+      syscall: 'connect',
+      address: '10.0.3.7',
+      port: 8080
+    }
+  }
+}

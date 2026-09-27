@@ -7,7 +7,7 @@ from debugagent.patterns.matcher import match_trace
 PATS = load_patterns(DEFAULT_PATTERN_DIR)
 F = (Frame("/srv/billing/app/x.py", 1, "f"),)
 
-@pytest.mark.parametrize("etype,msg,expected", [
+PY_CASES = [
     ("AttributeError", "'NoneType' object has no attribute 'zip'", "python.attribute_error.none_type"),
     ("AttributeError", "module 'json' has no attribute 'loadz'", "python.attribute_error.missing_attr"),
     ("ModuleNotFoundError", "No module named 'stripe'", "python.import_error.module_not_found"),
@@ -21,7 +21,9 @@ F = (Frame("/srv/billing/app/x.py", 1, "f"),)
     ("ConnectionRefusedError", "[Errno 111] Connection refused", "python.connection_refused"),
     ("json.decoder.JSONDecodeError", "Expecting value: line 1 column 1", "python.json_decode"),
     ("UnboundLocalError", "local variable 'x' referenced before assignment", "python.unbound_local"),
-])
+]
+
+@pytest.mark.parametrize("etype,msg,expected", PY_CASES)
 def test_each_python_pattern_matches(etype, msg, expected):
     h = match_trace(ParsedTrace(Family.PYTHON, etype, msg, F), PATS)
     assert h.pattern_id == expected

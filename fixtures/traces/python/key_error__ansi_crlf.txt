@@ -1,0 +1,6 @@
+[31mTraceback (most recent call last):[0m
+[31m  File "/srv/billing/app/api.py", line 20, in handle[0m
+[31m    pass[0m
+[31m  File "/srv/billing/app/invoice.py", line 7, in build[0m
+[31m    pass[0m
+[31mKeyError: 'customer_id'[0m

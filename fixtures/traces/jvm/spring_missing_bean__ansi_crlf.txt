@@ -1,0 +1,3 @@
+[31morg.springframework.beans.factory.NoSuchBeanDefinitionException: No qualifying bean of type 'X'[0m
+[31m	at com.acme.orders.pricing.Discounts.forName(Discounts.java:18)[0m
+[31m	at com.acme.orders.pricing.Pricer.price(Pricer.java:52)[0m

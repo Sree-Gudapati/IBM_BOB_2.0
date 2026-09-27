@@ -519,3 +519,206 @@ Added the Go parser and 14 Go patterns. Go panics and fatal errors now flow thro
 
 ---
 
+
+## Task 7 — Rust Parser and 12 Rust Patterns
+
+**Status:** ✅ Complete
+**Commit:** `5f499a0`
+
+### What was done
+
+Added the Rust panic parser supporting both the Rust ≥1.73 two-line format and the legacy single-line quoted format, plus `stack backtrace:` parsing with `::h<hex>` hash stripping. All 5 language families are now registered.
+
+### Files created
+
+| File | Description |
+|---|---|
+| `src/debugagent/parsers/rust.py` | Handles `thread '…' panicked at file:line:col:\nmsg` (new) and `thread '…' panicked at 'msg', file:line:col` (old). `stack backtrace:` entries with an `at` line become frames (innermost first, hash-stripped). Without a backtrace, a single `Frame(file, line, "<panic>")` is produced. |
+| `src/debugagent/patterns/data/rust/*.yaml` | 12 Rust patterns (see table) |
+| `tests/parsers/test_rust.py` | 6 parser tests |
+| `tests/patterns/test_rust_patterns.py` | 15 tests (12 golden + min-10 + unknown + std-frame skip) |
+
+**Modified:** `src/debugagent/parsers/__init__.py` — registered `Family.RUST: rust.parse` (all 5 families now registered)
+**Modified:** sentinel tests in `test_cli.py` and `test_orchestrator.py` — now monkeypatch PARSERS to remove Rust
+
+### Rust patterns (12)
+
+| Pattern ID | Message regex | Category | Confidence |
+|---|---|---|---|
+| `rust.unwrap_none` | `` called `Option::unwrap()` on a `None` value `` | code | 0.90 |
+| `rust.unwrap_err` | `` called `Result::unwrap()` on an `Err` value `` | code | 0.85 |
+| `rust.index_oob` | `index out of bounds: the len is \d+ but the index is \d+` | code | 0.85 |
+| `rust.overflow` | `attempt to (add\|subtract\|…) with overflow` | code | 0.85 |
+| `rust.divide_by_zero` | `attempt to (divide\|…) by zero` | code | 0.85 |
+| `rust.refcell_borrow` | `already (mutably )?borrowed\|BorrowMutError` | code | 0.85 |
+| `rust.str_slice` | `is not a char boundary\|range end index…` | code | 0.80 |
+| `rust.nested_runtime` | `Cannot (start\|drop) a runtime from within…` | config | 0.90 |
+| `rust.mutex_poisoned` | `PoisonError\|poisoned` | code | 0.87 |
+| `rust.explicit` | `not yet implemented\|unreachable code\|…` | code | 0.75 |
+| `rust.connection_refused` | `Connection refused\|ConnectionRefused` | dependency | 0.88 |
+| `rust.timeout` | `timed out\|TimedOut\|deadline has elapsed\|Elapsed` | dependency | 0.86 |
+
+### Test results
+
+```
+235 passed in 4.66s
+```
+
+---
+
+## Task 8 — Parallel Orchestrator (Timeouts, Failure Isolation, Timings)
+
+**Status:** ✅ Complete
+**Commit:** `b0caf3a`
+
+### What was done
+
+Replaced the sequential `diagnose` loop with a thread-pool implementation. Each subagent runs on a daemon thread with a shared wall-clock deadline (`timeout_s`, default 2.0 s). A crashed subagent's exception is caught and added to `notes`; a hung subagent is abandoned after the deadline. `Diagnosis` gained a `timings` field and `render_json` exposes it.
+
+### Changes
+
+| File | Change |
+|---|---|
+| `src/debugagent/models.py` | Added `timings: tuple[tuple[str, float], ...]` to `Diagnosis` |
+| `src/debugagent/orchestrator.py` | Rewrote with `threading.Thread` + deadline join; `SUBAGENT_TIMEOUT_S = 2.0`; `timeout_s` and `codebase` parameters; per-subagent error isolation |
+| `src/debugagent/cli.py` | Added `--timeout` option to `diagnose` |
+| `src/debugagent/render.py` | Added `"timings"` dict to `render_json` output |
+| `src/debugagent/aggregator.py` | Added `codebase` parameter (stub for Task 10) |
+| `tests/test_orchestrator_parallel.py` | 5 tests: all-5-families, crash isolation, timeout, concurrency, timings |
+
+### Test results
+
+```
+240 passed in 5.23s
+```
+
+---
+
+## Task 9 — Codebase Scanner (Services, Frameworks, Call Graph, Store, `scan` CLI)
+
+**Status:** ✅ Complete
+**Commit:** `a548abd`
+
+### What was done
+
+Built the full codebase scanner: manifest detection for all 5 families, framework/dependency extraction, JVM package mining, docker-compose + source URL call-graph builder, JSON store with `CodebaseMap`, and the `debugagent scan` CLI command.
+
+### Files created
+
+| File | Description |
+|---|---|
+| `src/debugagent/scanner/models.py` | `ServiceInfo` and `CodebaseMap` dataclasses; `service_for_frame()` (path segment, JVM package, and Rust crate heuristics); `calls()` transitive reachability; `to_dict()` / `from_dict()` |
+| `src/debugagent/scanner/languages.py` | `scan_services()` BFS up to depth 4; `detect_service()` matches 10 manifest types; `_dep_names()` parses package.json / pyproject.toml / go.mod / Cargo.toml / pom.xml; `_jvm_packages()` mines `.java/.kt/.scala` source paths |
+| `src/debugagent/scanner/graph.py` | `build_edges()` reads docker-compose `depends_on` + env URLs and scans source files for HTTP/gRPC/DB URLs and k8s service hostnames |
+| `src/debugagent/scanner/store.py` | `scan()`, `save_map()`, `load_map()`, `DEFAULT_MAP_PATH` |
+| `src/debugagent/scanner/__init__.py` | Re-exports public API |
+| `tests/conftest.py` | `mini_system` fixture (5-service polyglot system in `tmp_path`) and `SAMPLE_SYSTEM_FILES` dict |
+| `tests/scanner/test_languages.py` | 5 tests |
+| `tests/scanner/test_graph.py` | 2 tests |
+| `tests/scanner/test_store.py` | 3 tests (round-trip, frame attribution strategies, transitive `calls()`) |
+
+**Modified:** `src/debugagent/cli.py` — added `scan` command
+
+### Test results
+
+```
+251 passed in 5.44s
+```
+
+---
+
+## Task 10 — Root-Cause Aggregator: Service Attribution and Cross-Service Root Cause
+
+**Status:** ✅ Complete
+**Commit:** `6ac0c1a`
+
+### What was done
+
+Rewrote `aggregator.py` to attribute hypotheses to services, demote dependency-category hypotheses that are downstream symptoms, boost the source service, and apply a without-map discount for ungrouped inputs. Wired `--codebase` into the CLI.
+
+### Key logic
+
+| Rule | Effect |
+|---|---|
+| `_attribute()` | Maps each hypothesis to the first service matching any of its frames |
+| `_is_symptom_of(a, b)` | True when `a` is `dependency` category, `b` is not, and `a.service` transitively calls `b.service` |
+| `_with_map()` | Symptoms get ×0.6; sources get +0.05 (cap 0.99); evidence lines added to both |
+| `_without_map()` | Any `dependency` hypothesis gets ×0.8 with an "usually a symptom" evidence line when non-dependency errors also exist |
+
+### Changes
+
+| File | Change |
+|---|---|
+| `src/debugagent/aggregator.py` | Full rewrite with attribution, symptom/source logic, constants |
+| `src/debugagent/cli.py` | `_load_codebase()` helper; `--codebase` option on `diagnose` |
+| `tests/test_aggregator.py` | 5 tests: cross-service, no-map, lone dependency, unrelated services, Python attribution |
+
+### Test results
+
+```
+258 passed in 5.93s
+```
+
+---
+
+## Task 11 — Git-History Bug Mining and Codebase-Specific Confidence Boosts
+
+**Status:** ✅ Complete
+**Commit:** `018f7e2`
+
+### What was done
+
+Added `scanner/history.py` which runs `git log --format=%s` per service path, matches fix-commit subjects against 12 tag keyword regexes, and returns per-service tag counts. `scan()` fills `CodebaseMap.history` when `history=True`. The aggregator applies +0.05 when a hypothesis's tags overlap a service tag with count ≥ 3.
+
+### Files created / modified
+
+| File | Change |
+|---|---|
+| `src/debugagent/scanner/history.py` | `mine_history()`, `TAG_KEYWORDS` (12 tags matching the pattern YAML vocabulary), `_FIX` regex |
+| `src/debugagent/scanner/store.py` | `scan()` calls `mine_history()` when `history=True` |
+| `src/debugagent/aggregator.py` | `_history_boost()`, `HISTORY_MIN_COUNT = 3`, `HISTORY_BOOST = 0.05` |
+| `tests/scanner/test_history.py` | 2 tests (git repo fixture; non-git dir returns empty) |
+| `tests/test_aggregator.py` | 2 new tests (boost fires at 4 commits; silent at 2) |
+
+### Test results
+
+```
+262 passed in 6.66s
+```
+
+---
+
+## Task 12 — Sample Polyglot System, Labeled Trace Corpus, and Eval Harness
+
+**Status:** ✅ Complete
+
+### What was done
+
+Built the deterministic corpus generator, the 216-case labeled trace corpus (5 families × ≥13 patterns × 3 noise variants + 3 mixed cross-service + 3 handwritten fixtures), the `evaluation.py` engine, and the `debugagent eval` CLI command with configurable thresholds. The committed corpus passes the Stage 1 acceptance gate.
+
+### Files created
+
+| File | Description |
+|---|---|
+| `src/debugagent/evaluation.py` | `CaseResult`, `EvalReport`, `evaluate()` — runs each labeled trace through `diagnose`, measures accuracy / coverage / latency |
+| `fixtures/build_corpus.py` | Deterministic generator; reads golden case tables from `tests/patterns/test_*_patterns.py`, renders 3 noise variants per case, writes 216 labeled trace files + `labels.yaml` |
+| `fixtures/sample-system/` | 5-service polyglot system (web/Node, orders/JVM, billing/Python, inventory/Go, ledger/Rust) |
+| `fixtures/traces/` | 216 labeled traces across python/jvm/node/go/rust + mixed + handwritten subdirs |
+| `tests/test_evaluation.py` | 4 tests: accuracy/misses, CLI threshold failure, ≥10 patterns per family, Stage 1 gate |
+
+**Modified:** `tests/patterns/test_{python,jvm,node,go}_patterns.py` — hoisted parametrize lists into module-level `PY_CASES` / `JVM_CASES` / `NODE_CASES` / `GO_CASES` constants (consumed by `build_corpus.py`)
+**Modified:** `src/debugagent/cli.py` — added `eval` command
+
+### Stage 1 gate results
+
+```
+216 cases  accuracy 100.0%  coverage 100.0%  p95 < 5s  max subagent < 2s
+```
+
+### Test results
+
+```
+266 passed in 6.33s
+```
+
+---

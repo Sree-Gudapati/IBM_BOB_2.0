@@ -1,0 +1,3 @@
+java.util.ConcurrentModificationException
+	at com.acme.orders.pricing.Discounts.forName(Discounts.java:18)
+	at com.acme.orders.pricing.Pricer.price(Pricer.java:52)

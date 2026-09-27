@@ -1,0 +1,3 @@
+Error [ERR_UNHANDLED_REJECTION]: This error originated either by throwing inside of an async function
+    at getUser (/srv/web/src/users.ts:14:5)
+    at handler (/srv/web/src/api.ts:30:5)

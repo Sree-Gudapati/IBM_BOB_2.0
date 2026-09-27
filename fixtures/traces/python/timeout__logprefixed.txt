@@ -1,0 +1,6 @@
+2026-09-26T10:00:00.000Z ERROR [billing] Traceback (most recent call last):
+2026-09-26T10:00:00.000Z ERROR [billing]   File "/srv/billing/app/api.py", line 20, in handle
+2026-09-26T10:00:00.000Z ERROR [billing]     pass
+2026-09-26T10:00:00.000Z ERROR [billing]   File "/srv/billing/app/invoice.py", line 7, in build
+2026-09-26T10:00:00.000Z ERROR [billing]     pass
+2026-09-26T10:00:00.000Z ERROR [billing] requests.exceptions.ReadTimeout: HTTPConnectionPool read timed out

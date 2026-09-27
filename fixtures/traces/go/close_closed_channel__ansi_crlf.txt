@@ -1,0 +1,7 @@
+[31mpanic: close of closed channel[0m
+[31m[0m
+[31mgoroutine 1 [running]:[0m
+[31mmain.(*Store).Get(...)[0m
+[31m	/srv/inventory/store.go:42 +0x1d[0m
+[31mmain.handler(...)[0m
+[31m	/srv/inventory/main.go:18 +0x1d[0m

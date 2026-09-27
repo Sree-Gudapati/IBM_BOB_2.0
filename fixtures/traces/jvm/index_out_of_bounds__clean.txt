@@ -1,0 +1,3 @@
+java.lang.ArrayIndexOutOfBoundsException: Index 3 out of bounds for length 3
+	at com.acme.orders.pricing.Discounts.forName(Discounts.java:18)
+	at com.acme.orders.pricing.Pricer.price(Pricer.java:52)

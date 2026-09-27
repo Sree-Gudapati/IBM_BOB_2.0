@@ -1,0 +1,9 @@
+2026-09-26T10:00:00.000Z ERROR [ledger] thread 'main' panicked at src/ledger.rs:27:5:
+2026-09-26T10:00:00.000Z ERROR [ledger] byte index 3 is not a char boundary; it is inside 'é' (bytes 2..4) of `café`
+2026-09-26T10:00:00.000Z ERROR [ledger] stack backtrace:
+2026-09-26T10:00:00.000Z ERROR [ledger]    0: rust_begin_unwind
+2026-09-26T10:00:00.000Z ERROR [ledger]              at /rustc/abc/library/std/src/panicking.rs:645:5
+2026-09-26T10:00:00.000Z ERROR [ledger]    1: ledger_svc::post_entry
+2026-09-26T10:00:00.000Z ERROR [ledger]              at ./src/ledger.rs:27:5
+2026-09-26T10:00:00.000Z ERROR [ledger]    2: ledger_svc::main
+2026-09-26T10:00:00.000Z ERROR [ledger]              at ./src/main.rs:9:5

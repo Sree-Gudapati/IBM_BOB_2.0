@@ -1,0 +1,16 @@
+services:
+  web:
+    build: ./services/web
+    depends_on: [orders]
+    environment:
+      BILLING_URL: http://billing:8000
+  orders:
+    build: ./services/orders
+    depends_on:
+      inventory: {condition: service_started}
+  billing:
+    build: ./services/billing
+  inventory:
+    build: ./services/inventory
+  ledger:
+    build: ./services/ledger
