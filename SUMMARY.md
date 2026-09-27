@@ -335,3 +335,35 @@ Added a full JVM parser with `Caused by:` chain folding and 14 JVM patterns. Jav
 ```
 
 ---
+
+## Task 4 — Post-Review Fixes
+
+**Status:** ✅ Complete (uncommitted)
+
+### Fixes
+
+| Severity | Issue | Fix |
+|---|---|---|
+| High | Frameless traces dropped (`Exception in thread "main" java.lang.OutOfMemoryError: Java heap space` gave "No stack trace found") | Frameless traces are kept on a strong signal: an `Exception in thread` header, or a dotted `…Exception`/`Error`/`Throwable` type. Detection also recognises `... N more` and `Caused by: <fqn>` lines |
+| High | A multi-line message (Jackson `at [Source: …]`, SQL errors) discarded the whole trace | Up to 10 lines between the header and the first frame are held as pending message lines and joined into the message when a frame follows; they're discarded if no frame comes (log lines don't leak into frameless messages) |
+| High | `java.base@17.0.2/…`, `app//…` and hidden-class lambda (`$$Lambda$14/0x…`) frames not parsed | Frame regex accepts repeated `module[@version]/` or `//` prefixes and a `/0x…` hidden-class suffix; the detect signature accepts `@`, `-`, `(Native Method)` and `(Unknown Source)` |
+| Medium | `Caused by:` inside a `Suppressed:` block joined the main chain, so `.root()` could be wrong (Review Focus #2) | Suppressed blocks are tracked by indentation; everything more indented, including their own `Caused by:`, is skipped |
+| Medium | Main-trace frames after a `Suppressed:` block were lost | Dedenting back to the Suppressed line's level resumes the main trace |
+| Medium | Custom types (`com.acme.PaymentDeclined`, `MyException`) produced nothing | Any dotted FQN with a Capitalised last segment, or an undotted `…Exception`/`Error`/`Throwable`, is accepted; undotted names need frames, so Python's `KeyError: 1` is not taken as JVM |
+| Medium | `kotlin.KotlinNullPointerException` → `jvm.unknown` | `jvm.npe` and `jvm.npe.helpful` `error_type` is `(?:Kotlin)?NullPointerException` |
+| Low | Task 1 deferred item: Native-Method-only traces not detected | Fixed in the detect signature (see above) |
+| Low | `mypy --strict` error in `_fold()`; 4 ruff issues | `_fold()` asserts non-empty input; ruff clean |
+
+### New tests (15)
+
+- `tests/parsers/test_jvm.py` (13): frameless OOM, frameless dotted plus detection, undotted not JVM, multi-line message, no log-line leak, 3 frame formats (parametrized), Native-Method detection, suppressed cause isolation, frames after suppressed, 2 custom exception names
+- `tests/patterns/test_jvm_patterns.py` (2): Kotlin NPE, frameless OOM diagnosis
+
+### Test results after fixes
+
+```
+132 passed in 3.66s  (coverage 98%, mypy --strict clean, ruff clean)
+31.6 MB JVM log: 0.51 s
+```
+
+---
