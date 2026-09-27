@@ -1,4 +1,5 @@
-from debugagent.models import Family, Frame, ParsedTrace
+from debugagent.models import Family, ParsedTrace
+
 
 def test_root_walks_cause_chain_to_innermost():
     inner = ParsedTrace(Family.JVM, "java.lang.NullPointerException", "x", ())

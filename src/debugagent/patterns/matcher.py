@@ -1,11 +1,14 @@
 import re
-from typing import Sequence
+from collections.abc import Sequence
+
 from debugagent.models import Family, Frame, Hypothesis, ParsedTrace
 from debugagent.patterns.loader import Pattern
 from debugagent.patterns.repro import render_repro
 
 GENERIC_DISCOUNT = 0.85
 UNKNOWN_CONFIDENCE = 0.1
+# Only the head of a message is regex-matched: bounds cost on multi-MB messages.
+MATCH_MESSAGE_LIMIT = 4096
 
 _LIB_PATH = re.compile(
     r"site-packages/|dist-packages/|/lib/python\d[\d.]*/|<frozen |node_modules/|^node:|^internal/"
@@ -38,7 +41,7 @@ def match_trace(trace: ParsedTrace, patterns: Sequence[Pattern]) -> Hypothesis:
             continue
         if not (p.error_type.fullmatch(root.error_type) or p.error_type.fullmatch(root.short_error_type)):
             continue
-        if p.message_regex is not None and not p.message_regex.search(root.message):
+        if p.message_regex is not None and not p.message_regex.search(root.message[:MATCH_MESSAGE_LIMIT]):
             continue
         key = (1 if p.message_regex is not None else 0, p.base_confidence, p)
         if best is None or key[:2] > best[:2]:

@@ -244,3 +244,39 @@ Wired the parser + pattern pipeline into a working CLI. `debugagent diagnose` no
 - **`diagnose` is still sequential** — Task 8 parallelizes it with a thread pool and per-subagent timeouts. The interface (`diagnose(text, subagents)`) is unchanged so Task 8 is a drop-in replacement.
 
 ---
+
+## Task 3 — Post-Review Fixes
+
+**Status:** ✅ Complete (uncommitted)
+
+### Fixes
+
+| Severity | Issue | Fix |
+|---|---|---|
+| High | Unreadable input file crashed with a raw traceback (Review Focus #5) | `cli._read_input` catches `OSError`: "Cannot read input file …", exit 2 |
+| High | Directory as input said "file not found" | "Input is a directory, not a file", exit 2 |
+| Medium | Misspelled `--patterns` dir silently ignored | "Pattern directory not found", exit 1 |
+| Medium | Trace from a language with no analyzer yet reported "No stack trace found (supported: JVM, …)" | CLI: "Detected jvm trace(s), but no analyzer is available…"; the orchestrator adds the same note when other families were diagnosed; "supported" list now comes from `PARSERS` |
+| Medium | UTF-16 input (Windows/PowerShell logs) came back as no trace | `_decode()` honours UTF-8/16/32 BOMs and sniffs BOM-less UTF-16 LE/BE |
+| Medium | 3 `mypy --strict` errors | Typed `_Key` alias in `aggregator.py`; `dict[str, Any]` in `render.py` |
+| Low | Text output printed multi-MB messages in full | Clipped to 500 chars with "… [N more chars]"; JSON keeps the full message |
+| Low | JSON unbounded (5,001 hypotheses = 6.8 MB) | `--limit` (default 50) with a "showing top N of M" note |
+| Low | Slow user regexes like `(A+)+B` could hang a diagnosis | Loader rejects nested quantifiers; matcher only regex-searches the first 4,096 message chars (Task 8 timeouts remain the second guard) |
+| Low | Interactive `diagnose` with no file waited on the keyboard | A TTY on stdin gives a usage hint, exit 2 |
+| Low | 30 ruff issues | All fixed (`noqa: B008` on the idiomatic typer default) |
+
+### New tests (19)
+
+- `tests/test_cli.py`: unreadable file, directory, missing `--patterns` dir, unsupported family, 5 encodings, `--limit`, TTY stdin
+- `tests/test_render.py`: message clipping, service/evidence/others/notes sections, empty diagnosis
+- `tests/test_orchestrator.py`: unsupported-family note
+- `tests/patterns/test_loader.py`: 4 nested-quantifier regexes rejected
+
+### Test results after fixes
+
+```
+95 passed in 3.26s  (coverage 98%, mypy --strict clean, ruff clean)
+48 MB log end-to-end: 0.29 s
+```
+
+---

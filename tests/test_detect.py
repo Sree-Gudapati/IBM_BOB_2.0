@@ -1,4 +1,4 @@
-from debugagent.detect import detect_families, normalize, MAX_INPUT_CHARS
+from debugagent.detect import MAX_INPUT_CHARS, detect_families, normalize
 from debugagent.models import Family
 
 PY = 'Traceback (most recent call last):\n  File "app/svc.py", line 3, in run\n    x.y\nAttributeError: \'NoneType\' object has no attribute \'y\'\n'

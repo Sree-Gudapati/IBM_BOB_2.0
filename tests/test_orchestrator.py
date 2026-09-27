@@ -1,8 +1,10 @@
+from pathlib import Path
+
 from debugagent.models import Family
 from debugagent.orchestrator import diagnose
 from debugagent.subagent import build_subagents
 
-SIMPLE = open("tests/data/python_none.txt").read()
+SIMPLE = Path("tests/data/python_none.txt").read_text()
 
 def test_diagnose_python_end_to_end():
     d = diagnose(SIMPLE, build_subagents())
@@ -22,3 +24,10 @@ def test_oversized_input_notes_truncation():
     d = diagnose("x\n" * 3_000_000 + SIMPLE, build_subagents())
     assert d.top.pattern_id == "python.attribute_error.none_type"
     assert any("truncated" in n for n in d.notes)
+
+
+def test_family_without_subagent_is_noted():
+    jvm = 'Exception in thread "main" java.lang.NullPointerException\n\tat com.a.B.c(B.java:1)\n'
+    d = diagnose(SIMPLE + "\n" + jvm, build_subagents())
+    assert d.top.pattern_id == "python.attribute_error.none_type"
+    assert any("no jvm analyzer" in n for n in d.notes)

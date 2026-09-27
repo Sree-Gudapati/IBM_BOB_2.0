@@ -1,5 +1,6 @@
 import re
 from string import Template
+
 from debugagent.models import Family, Frame, ParsedTrace
 
 FAMILY_REPRO: dict[Family, str] = {

@@ -1,6 +1,6 @@
 from debugagent.models import Family, Frame, ParsedTrace
 from debugagent.patterns.loader import load_patterns
-from debugagent.patterns.matcher import match_trace, is_library_frame
+from debugagent.patterns.matcher import is_library_frame, match_trace
 
 SPECIFIC = """
 id: python.attribute_error.none_type

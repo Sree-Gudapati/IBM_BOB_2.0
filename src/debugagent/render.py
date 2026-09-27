@@ -1,6 +1,15 @@
 import json
 import textwrap
+from typing import Any
+
 from debugagent.models import Diagnosis, Frame, Hypothesis
+
+TEXT_MESSAGE_LIMIT = 500      # chars of an exception message shown in text output
+DEFAULT_JSON_LIMIT = 50       # hypotheses emitted in JSON unless --limit says otherwise
+
+
+def _clip(s: str, n: int = TEXT_MESSAGE_LIMIT) -> str:
+    return s if len(s) <= n else f"{s[:n]}… [{len(s) - n:,} more chars]"
 
 
 def _loc(f: Frame) -> str:
@@ -11,7 +20,7 @@ def _hyp_block(h: Hypothesis) -> list[str]:
     lines = [f"Top diagnosis (confidence {h.confidence:.0%}) — {h.pattern_id} [{h.category}]"]
     if h.service:
         lines.append(f"Service: {h.service}")
-    lines += [f"Error: {h.error_type}: {h.message}", f"Root cause: {h.root_cause}", "Where:"]
+    lines += [f"Error: {h.error_type}: {_clip(h.message)}", f"Root cause: {h.root_cause}", "Where:"]
     lines += [f"  {i}. {_loc(f)}" for i, f in enumerate(h.locations, 1)] or ["  (no frames)"]
     if h.fixes:
         lines.append("Fixes:")
@@ -39,7 +48,7 @@ def render_text(d: Diagnosis, limit: int = 3) -> str:
     return "\n".join(lines)
 
 
-def _h(h: Hypothesis) -> dict:
+def _h(h: Hypothesis) -> dict[str, Any]:
     return {
         "pattern_id": h.pattern_id, "family": h.family.value, "category": h.category,
         "confidence": h.confidence, "service": h.service, "error_type": h.error_type,
@@ -51,9 +60,13 @@ def _h(h: Hypothesis) -> dict:
     }
 
 
-def render_json(d: Diagnosis) -> str:
+def render_json(d: Diagnosis, limit: int | None = DEFAULT_JSON_LIMIT) -> str:
+    hyps = d.hypotheses if limit is None else d.hypotheses[:limit]
+    notes = list(d.notes)
+    if len(hyps) < len(d.hypotheses):
+        notes.append(f"showing top {len(hyps)} of {len(d.hypotheses)} hypotheses (raise with --limit)")
     return json.dumps({
         "families": sorted(f.value for f in d.families),
-        "hypotheses": [_h(h) for h in d.hypotheses],
-        "notes": list(d.notes),
+        "hypotheses": [_h(h) for h in hyps],
+        "notes": notes,
     }, indent=2)

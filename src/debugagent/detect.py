@@ -1,4 +1,5 @@
 import re
+
 from debugagent.models import Family
 
 MAX_INPUT_CHARS = 5_000_000
@@ -26,11 +27,11 @@ _PREFIX = re.compile(
 _SIGNATURES: dict[Family, re.Pattern[str]] = {
     Family.PYTHON: re.compile(
         r'^\s*Traceback \(most recent call last\):|^\s*File "[^"]+\.py", line \d+',
-        re.M,
+        re.MULTILINE,
     ),
     Family.JVM: re.compile(
         r'^\s*at [\w$.<>/]+\([\w$]+\.(?:java|kt|scala):\d+\)|^Exception in thread "',
-        re.M,
+        re.MULTILINE,
     ),
     # Matches extension-bearing paths (.js/.ts/etc.) AND Node.js internal frames
     # such as "node:net:1555:16" or "node:internal/stream_base_commons:183:27".
@@ -40,10 +41,10 @@ _SIGNATURES: dict[Family, re.Pattern[str]] = {
         r"(?:file://)?[^\s()]+\.(?:js|mjs|cjs|ts|tsx|jsx):\d+:\d+"
         r"|node:[\w/.-]+:\d+:\d+"
         r")\)?\s*$",
-        re.M,
+        re.MULTILINE,
     ),
-    Family.GO: re.compile(r"^panic: |^fatal error: |^goroutine \d+ \[", re.M),
-    Family.RUST: re.compile(r"^thread '[^']*' panicked at ", re.M),
+    Family.GO: re.compile(r"^panic: |^fatal error: |^goroutine \d+ \[", re.MULTILINE),
+    Family.RUST: re.compile(r"^thread '[^']*' panicked at ", re.MULTILINE),
 }
 
 

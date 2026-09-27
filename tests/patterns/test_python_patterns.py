@@ -1,6 +1,7 @@
 import pytest
+
 from debugagent.models import Family, Frame, ParsedTrace
-from debugagent.patterns.loader import load_patterns, DEFAULT_PATTERN_DIR
+from debugagent.patterns.loader import DEFAULT_PATTERN_DIR, load_patterns
 from debugagent.patterns.matcher import match_trace
 
 PATS = load_patterns(DEFAULT_PATTERN_DIR)

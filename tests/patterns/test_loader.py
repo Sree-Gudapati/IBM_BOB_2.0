@@ -1,6 +1,7 @@
 import pytest
+
 from debugagent.models import Family
-from debugagent.patterns.loader import load_patterns, PatternError, DEFAULT_PATTERN_DIR
+from debugagent.patterns.loader import DEFAULT_PATTERN_DIR, PatternError, load_patterns
 
 GOOD = """
 id: python.test.thing
@@ -66,3 +67,11 @@ def test_malformed_fields_raise_pattern_error(tmp_path, mutation, needle):
 
 def test_builtin_tags_are_all_strings():
     assert all(isinstance(t, str) for p in load_patterns(DEFAULT_PATTERN_DIR) for t in p.tags)
+
+
+@pytest.mark.parametrize("rx", ["(A+)+B", r"(\w*)*", "(a|b+)*x", "(?:x{2,})+"])
+def test_nested_quantifier_regex_rejected(tmp_path, rx):
+    (tmp_path / "bad.yaml").write_text(GOOD + f"message_regex: '{rx}'\n")
+    with pytest.raises(PatternError) as e:
+        load_patterns(tmp_path)
+    assert "bad.yaml" in str(e.value) and "nested quantifier" in str(e.value)

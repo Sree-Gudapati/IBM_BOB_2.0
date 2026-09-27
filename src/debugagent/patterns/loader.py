@@ -2,13 +2,21 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+
 import yaml
+
 from debugagent.models import Family, FixOption
 from debugagent.patterns.repro import FAMILY_REPRO
 
 DEFAULT_PATTERN_DIR = Path(__file__).parent / "data"
 CATEGORIES = {"code", "dependency", "resource", "config"}
 _REQUIRED = ("id", "family", "error_type", "category", "root_cause", "base_confidence", "fixes")
+
+
+# A quantified group that itself contains a quantifier, e.g. (a+)+ or (\w*)*.
+# Python's re has no timeout, so such catastrophic-backtracking patterns are
+# rejected at load time (Task 8 adds per-subagent timeouts as a second guard).
+_NESTED_QUANTIFIER = re.compile(r"\((?:[^()\\]|\\.)*(?<!\\)[+*}](?:[^()\\]|\\.)*\)[+*{]")
 
 
 class PatternError(ValueError):
@@ -69,6 +77,9 @@ def _build(path: Path, d: dict[str, Any], source: str) -> Pattern:
     mrx_src = d.get("message_regex")
     if mrx_src is not None and not isinstance(mrx_src, str):
         raise PatternError(f"{path}: 'message_regex' must be a string, got {mrx_src!r}")
+    for name, src in (("error_type", etype_src), ("message_regex", mrx_src)):
+        if src and _NESTED_QUANTIFIER.search(src):
+            raise PatternError(f"{path}: {name} has a nested quantifier (catastrophic backtracking risk): {src!r}")
     try:
         etype = re.compile(etype_src)
         mrx = re.compile(mrx_src) if mrx_src else None

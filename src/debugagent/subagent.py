@@ -1,6 +1,7 @@
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Sequence
+
 from debugagent.models import Family, Hypothesis, ParsedTrace
 from debugagent.parsers import PARSERS
 from debugagent.patterns.loader import DEFAULT_PATTERN_DIR, Pattern, load_patterns
