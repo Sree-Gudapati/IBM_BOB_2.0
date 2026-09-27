@@ -1,0 +1,15 @@
+id: jvm.optional_get_empty
+family: jvm
+error_type: "NoSuchElementException"
+message_regex: "No value present"
+category: code
+root_cause: >
+  Optional.get() or orElseThrow() called on an empty Optional: unchecked
+  Optional usage where the absent case was not handled.
+base_confidence: 0.9
+tags: ["null", "optional"]
+fixes:
+  - summary: Replace .get() with orElse / orElseGet / ifPresent and handle the absent case
+    tradeoff: Safe; requires choosing a meaningful default or skip action
+  - summary: Use orElseThrow(() -> new DomainException("...")) with context
+    tradeoff: Fails clearly with domain context; still throws, so the caller must catch

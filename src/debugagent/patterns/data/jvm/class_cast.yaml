@@ -1,0 +1,14 @@
+id: jvm.class_cast
+family: jvm
+error_type: "ClassCastException"
+category: code
+root_cause: >
+  Wrong runtime type; often from raw generics, deserialization into Object,
+  or the same class loaded by two different classloaders.
+base_confidence: 0.8
+tags: [types]
+fixes:
+  - summary: Use typed generics or a typed deserializer to catch the mismatch at compile/parse time
+    tradeoff: Correct fix; may require refactoring the deserialization layer
+  - summary: Guard with instanceof pattern matching before the cast
+    tradeoff: Local fix; can hide underlying bad data flowing through the system

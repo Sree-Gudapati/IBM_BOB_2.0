@@ -1,0 +1,14 @@
+id: jvm.npe
+family: jvm
+error_type: "NullPointerException"
+category: code
+root_cause: >
+  Null dereference at the top app frame; commonly an unchecked return value,
+  an uninitialized field, or unboxing a null wrapper type.
+base_confidence: 0.8
+tags: ["null"]
+fixes:
+  - summary: Add -XX:+ShowCodeDetailsInExceptionMessages (JDK 14+ default) to name the null expression
+    tradeoff: Diagnostic only; does not fix the bug, just gives a better message
+  - summary: Add Objects.requireNonNull at the boundary where the value enters the system
+    tradeoff: Fails fast with a clear message; adds checks throughout call sites

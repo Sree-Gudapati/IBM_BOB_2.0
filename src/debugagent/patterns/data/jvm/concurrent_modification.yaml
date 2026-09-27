@@ -1,0 +1,14 @@
+id: jvm.concurrent_modification
+family: jvm
+error_type: "ConcurrentModificationException"
+category: code
+root_cause: >
+  A collection was modified while being iterated: either the same thread
+  removed elements via a for-each loop, or another thread mutated it concurrently.
+base_confidence: 0.85
+tags: [concurrency]
+fixes:
+  - summary: Use Iterator.remove() or Collection.removeIf() inside the loop
+    tradeoff: Simple fix for same-thread removal; does not address multi-thread access
+  - summary: Use a concurrent collection (CopyOnWriteArrayList, ConcurrentHashMap) or copy before iterating
+    tradeoff: Thread-safe; copy has memory and performance cost, concurrent collections have semantics trade-offs

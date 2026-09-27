@@ -1,0 +1,15 @@
+id: jvm.connection_refused
+family: jvm
+error_type: "ConnectException|HttpHostConnectException"
+message_regex: "Connection refused"
+category: dependency
+root_cause: >
+  The target service or port is not listening: it is down, the host/port is
+  misconfigured, or it is not yet ready at startup.
+base_confidence: 0.8
+tags: [connectivity]
+fixes:
+  - summary: Check service discovery and verify host/port environment variables, then redeploy
+    tradeoff: Config fix; requires a new deploy to take effect
+  - summary: Add a startup readiness check with retry before accepting traffic
+    tradeoff: Makes startup resilient; slightly slower first-boot time

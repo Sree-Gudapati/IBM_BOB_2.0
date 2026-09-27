@@ -1,0 +1,14 @@
+id: jvm.index_out_of_bounds
+family: jvm
+error_type: "IndexOutOfBoundsException|ArrayIndexOutOfBoundsException|StringIndexOutOfBoundsException"
+category: code
+root_cause: >
+  Off-by-one error, or code assumed a non-empty list/string/array without
+  checking bounds first.
+base_confidence: 0.8
+tags: [off-by-one, empty]
+fixes:
+  - summary: Check bounds or emptiness before accessing the index
+    tradeoff: Minimal local change; must propagate a sentinel or throw a domain exception
+  - summary: Use stream / iterator APIs instead of direct index access
+    tradeoff: Removes the bug class; small refactor of the surrounding logic

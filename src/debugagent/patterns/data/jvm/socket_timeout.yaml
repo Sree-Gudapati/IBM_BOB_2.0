@@ -1,0 +1,14 @@
+id: jvm.socket_timeout
+family: jvm
+error_type: "SocketTimeoutException|ReadTimeoutException|TimeoutException|ResourceAccessException"
+category: dependency
+root_cause: >
+  A downstream call exceeded its configured timeout; the fault is usually in
+  the callee, not the caller.
+base_confidence: 0.75
+tags: [timeout]
+fixes:
+  - summary: Set explicit connect/read timeouts and add retry with exponential backoff
+    tradeoff: Quick relief; can amplify load on an already-struggling downstream service
+  - summary: Fix callee latency and add a circuit breaker at this call site
+    tradeoff: Root fix; requires cross-team coordination and a new deploy

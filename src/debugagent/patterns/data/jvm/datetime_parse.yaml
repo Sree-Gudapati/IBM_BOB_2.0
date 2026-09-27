@@ -1,0 +1,14 @@
+id: jvm.datetime_parse
+family: jvm
+error_type: "DateTimeParseException"
+category: code
+root_cause: >
+  Date/time string does not match the formatter; typically mismatched timezone
+  offsets or locale-specific formats arriving from another service.
+base_confidence: 0.8
+tags: [timezone, parsing]
+fixes:
+  - summary: Use ISO-8601 with timezone offset (OffsetDateTime / Instant) end-to-end across services
+    tradeoff: Robust and unambiguous; requires a contract change with all producers
+  - summary: Add a lenient multi-format parser at the boundary that tries known formats in order
+    tradeoff: Tolerant of format drift; masks the underlying schema inconsistency

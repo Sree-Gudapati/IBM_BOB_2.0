@@ -1,0 +1,14 @@
+id: jvm.stack_overflow
+family: jvm
+error_type: "StackOverflowError"
+category: code
+root_cause: >
+  Unbounded recursion; often cyclic object graphs in toString/equals/JSON
+  serialization from bidirectional JPA relations or self-referencing models.
+base_confidence: 0.85
+tags: [recursion]
+fixes:
+  - summary: Break the cycle with @JsonIgnore / @ToString.Exclude / @EqualsAndHashCode.Exclude
+    tradeoff: Targeted fix; needs the cycle identified first, may affect serialization output
+  - summary: Convert the recursion to an explicit iterative loop with a stack
+    tradeoff: Robust for deep structures; requires a larger refactor

@@ -73,9 +73,10 @@ def test_missing_patterns_dir_exit_1():
     assert r.exit_code == 1 and "Pattern directory not found" in r.output
 
 def test_detected_family_without_analyzer_says_so():
-    jvm = 'Exception in thread "main" java.lang.NullPointerException\n\tat com.a.B.c(B.java:1)\n'
-    r = R.invoke(app, ["diagnose", "-"], input=jvm)
-    assert r.exit_code == 2 and "Detected jvm" in r.output and "no analyzer" in r.output
+    # Go is not yet registered; use it as the "detected but no analyzer" family
+    go = "panic: runtime error: invalid memory address\n\ngoroutine 1 [running]:\nmain.main()\n\t/srv/svc/main.go:9 +0x1d\n"
+    r = R.invoke(app, ["diagnose", "-"], input=go)
+    assert r.exit_code == 2 and "Detected go" in r.output and "no analyzer" in r.output
 
 @pytest.mark.parametrize("enc", ["utf-16", "utf-16-le", "utf-16-be", "utf-32", "utf-8-sig"])
 def test_bom_and_utf16_input_decoded(tmp_path, enc):

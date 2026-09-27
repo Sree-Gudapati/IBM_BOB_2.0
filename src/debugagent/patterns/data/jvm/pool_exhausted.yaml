@@ -1,0 +1,15 @@
+id: jvm.pool_exhausted
+family: jvm
+error_type: "SQLTransientConnectionException|ConnectionPoolTimeoutException|PoolExhaustedException|CannotGetJdbcConnectionException"
+message_regex: "not available|pool|timed? ?out"
+category: resource
+root_cause: >
+  Connection pool exhausted: connections are leaked (not closed), held during
+  slow calls, or the pool is undersized for the current load.
+base_confidence: 0.85
+tags: [pool, leak]
+fixes:
+  - summary: Enable leakDetectionThreshold, find the leak, and use try-with-resources to close connections
+    tradeoff: Root fix; requires investigation and may need code changes across the codebase
+  - summary: Raise the pool size and set an explicit connectionTimeout
+    tradeoff: Fast relief under load; can overload the database if the leak is not fixed

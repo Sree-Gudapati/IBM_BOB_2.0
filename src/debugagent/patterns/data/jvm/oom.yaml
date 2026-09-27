@@ -1,0 +1,15 @@
+id: jvm.oom
+family: jvm
+error_type: "OutOfMemoryError"
+message_regex: "Java heap space|GC overhead|Metaspace|Direct buffer"
+category: resource
+root_cause: >
+  Heap or metaspace exhausted: a memory leak (unbounded cache/collection,
+  classloader leak) or an undersized -Xmx for the actual workload.
+base_confidence: 0.85
+tags: [memory, leak]
+fixes:
+  - summary: Enable -XX:+HeapDumpOnOutOfMemoryError, take a heap dump, and fix the retaining path
+    tradeoff: Root fix; heap dump analysis takes time and may require a tool like Eclipse MAT
+  - summary: Raise -Xmx or container memory limit as a short-term measure
+    tradeoff: Delays recurrence; does not address the leak or the sizing root cause

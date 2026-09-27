@@ -1,0 +1,14 @@
+id: jvm.spring_missing_bean
+family: jvm
+error_type: "NoSuchBeanDefinitionException|UnsatisfiedDependencyException"
+category: config
+root_cause: >
+  Spring could not wire a dependency: the bean is missing @Component/@Bean,
+  the package is outside the component scan, or the required profile is inactive.
+base_confidence: 0.85
+tags: [spring, config]
+fixes:
+  - summary: Add the missing @Component / @Bean / @Service annotation or fix the component-scan base package
+    tradeoff: Correct code fix; requires understanding the Spring context configuration
+  - summary: Activate the required profile or set the conditional property that enables the bean
+    tradeoff: Config-only change; only works if the bean is intentionally conditional

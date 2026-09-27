@@ -1,0 +1,14 @@
+id: jvm.illegal_argument_state
+family: jvm
+error_type: "IllegalArgumentException|IllegalStateException"
+category: code
+root_cause: >
+  A precondition check failed; the exception message and the throwing frame
+  identify which invariant was violated.
+base_confidence: 0.5
+tags: [precondition]
+fixes:
+  - summary: Fix the caller that violates the precondition by tracing back through the call stack
+    tradeoff: Correct fix; requires understanding the invariant and all callers
+  - summary: Relax the precondition if it is over-strict for the actual usage contract
+    tradeoff: Faster; risks allowing genuinely bad state to propagate further

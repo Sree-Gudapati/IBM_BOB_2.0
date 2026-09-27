@@ -1,0 +1,15 @@
+id: jvm.npe.helpful
+family: jvm
+error_type: "NullPointerException"
+message_regex: 'because ".+" is null|Cannot invoke'
+category: code
+root_cause: >
+  Null dereference; the JDK 14+ message names the exact null expression,
+  so start there.
+base_confidence: 0.9
+tags: ["null"]
+fixes:
+  - summary: Null-check that expression where it is produced and handle the missing case
+    tradeoff: Local and fast, but can hide the upstream cause that allowed null
+  - summary: Model the value as Optional or annotate @NonNull and validate at the boundary
+    tradeoff: Removes the bug class; requires a wider change to callers and producers
