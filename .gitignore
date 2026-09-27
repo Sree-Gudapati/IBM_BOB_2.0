@@ -3,3 +3,4 @@ __pycache__/
 *.egg-info/
 .debugagent/
 .pytest_cache/
+.coverage

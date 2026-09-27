@@ -6,25 +6,21 @@ MAX_INPUT_CHARS = 5_000_000
 # Strip ANSI CSI sequences (colours, cursor moves) and OSC sequences (title/link).
 _ANSI = re.compile(r"\x1b(?:\[[0-9;]*[A-Za-z]|\][^\x07\x1b]*(?:\x07|\x1b\\))")
 
-# Match structured-log prefixes at the START of a line.  Each component ends
-# with a single literal space that is consumed as part of the prefix.  The
-# final (?=\S) lookahead fires only when there is non-space payload remaining,
-# so a line that IS all prefix (or blank) produces an empty match and is left
-# unchanged.  Crucially, any indentation that belongs to the payload (e.g.
-# Python "  File …") is NOT consumed because the regex stops before it.
+# Match structured-log prefixes at the START of a line.  Each component
+# consumes exactly ONE separator space, so any further indentation belongs to
+# the payload and is preserved (Python "  File …", Java "\tat …").
 #
 # Accepted components (all optional, in order):
 #   timestamp – ISO-8601 date+time, optional brackets/timezone
-#   level     – TRACE/DEBUG/INFO/WARN/WARNING/ERROR/SEVERE/FATAL/CRITICAL,
-#               case-insensitive, optional brackets/colon
+#   level     – UPPERCASE level with optional brackets/colon, or a lowercase
+#               level WITHOUT a colon.  Mixed case ("Error:", "Warning:") is
+#               never a level: it is the payload's own error type (JS/Node).
 #   service   – [tag] or [tag:detail]
+_LEVELS = "TRACE|DEBUG|INFO|WARN|WARNING|ERROR|SEVERE|FATAL|CRITICAL"
 _PREFIX = re.compile(
-    r"^(?:"
-    r"(?:\[?\d{4}-\d{2}-\d{2}[T ][\d:.,]+(?:Z|[+-]\d{2}:?\d{2})?\]? )?"
-    r"(?:\[?(?:TRACE|DEBUG|INFO|WARN(?:ING)?|ERROR|SEVERE|FATAL|CRITICAL)\]?:? )?"
+    r"^(?:\[?\d{4}-\d{2}-\d{2}[T ][\d:.,]+(?:Z|[+-]\d{2}:?\d{2})?\]? )?"
+    rf"(?:\[?(?:{_LEVELS})\]?:? |\[?(?:{_LEVELS.lower()})\]? )?"
     r"(?:\[[\w.@:/-]+\] )?"
-    r")(?=\S)",
-    re.IGNORECASE,
 )
 
 _SIGNATURES: dict[Family, re.Pattern[str]] = {

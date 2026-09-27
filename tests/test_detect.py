@@ -53,10 +53,27 @@ def test_normalize_preserves_indentation_after_prefix_strip():
         f"2026-09-26T10:00:00Z ERROR [billing] {ln}" for ln in PY.splitlines()
     )
     out = normalize(wrapped)
-    # The two-space indent on File lines must still be present
-    assert '  File "app/svc.py", line 3, in run' in out
-    # And detection must still work on the normalized output
+    # Exact line equality: the whole prefix is gone AND indentation survives
+    assert out.splitlines() == PY.splitlines()
     assert detect_families(out) == {Family.PYTHON}
+
+
+def test_normalize_preserves_tab_indentation_after_prefix_strip():
+    line = "\tat com.acme.Orders.place(Orders.java:42)"
+    assert normalize(f"2026-09-26T10:00:00Z ERROR [svc] {line}") == line
+
+
+def test_normalize_strips_lowercase_and_uppercase_colon_levels():
+    assert normalize("2026-09-26T10:00:00Z error [svc] x") == "x"
+    assert normalize("ERROR: Traceback (most recent call last):") == (
+        "Traceback (most recent call last):"
+    )
+
+
+def test_normalize_never_eats_payload_error_type():
+    for s in ("Error: boom", "Warning: x", "Error: connect ECONNREFUSED 127.0.0.1:5432"):
+        assert normalize(s) == s
+    assert normalize("2026-09-26T10:00:00Z ERROR [web] Error: boom") == "Error: boom"
 
 # Fix 2: Node ECONNREFUSED traces with only node: internal frames must be detected
 def test_detects_node_internal_frames():
