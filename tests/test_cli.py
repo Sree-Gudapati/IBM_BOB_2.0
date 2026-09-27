@@ -109,3 +109,11 @@ def test_tty_stdin_does_not_block(monkeypatch):
     with pytest.raises(cli.typer.Exit) as e:
         cli._read_input(None)
     assert e.value.exit_code == 2
+
+
+def test_scan_writes_only_under_debugagent(mini_system):
+    before = {p for p in mini_system.rglob("*")}
+    r = R.invoke(app, ["scan", str(mini_system), "--no-history"])
+    assert r.exit_code == 0 and "orders" in r.stdout and "calls: inventory" in r.stdout
+    new = {p for p in mini_system.rglob("*")} - before
+    assert new and all(".debugagent" in str(p) for p in new)

@@ -1,6 +1,7 @@
 import codecs
 import sys
 from pathlib import Path
+from typing import Optional
 
 import typer
 
@@ -8,6 +9,7 @@ from debugagent.orchestrator import diagnose as run_diagnose
 from debugagent.parsers import PARSERS
 from debugagent.patterns.loader import PatternError
 from debugagent.render import DEFAULT_JSON_LIMIT, render_json, render_text
+from debugagent.scanner import DEFAULT_MAP_PATH, save_map, scan as run_scan
 from debugagent.subagent import build_subagents
 
 app = typer.Typer(no_args_is_help=True, add_completion=False)
@@ -94,3 +96,25 @@ def diagnose(
         supported = ", ".join(sorted(f.value for f in PARSERS))
         raise _fail(f"No stack trace found in input (supported: {supported}).", 2)
     typer.echo(render_json(d, limit=limit) if json_out else render_text(d))
+
+
+@app.command()
+def scan(
+    root: Path = typer.Argument(..., help="Repo or monorepo root to scan"),
+    out: Optional[Path] = typer.Option(None, "--out", help="Map file (default ROOT/.debugagent/codebase.json)"),
+    history: bool = typer.Option(True, "--history/--no-history", help="Mine git history for bug tags"),
+) -> None:
+    """Scan services, languages, frameworks and the call graph (read-only)."""
+    if not root.is_dir():
+        raise _fail(f"Root directory not found: {root}", 2)
+    m = run_scan(root, history=history)
+    if not m.services:
+        raise _fail(
+            f"No services found under {root} (looked for pom.xml, go.mod, package.json, ...).", 2
+        )
+    dest = out or (root / DEFAULT_MAP_PATH)
+    save_map(m, dest)
+    for name, s in sorted(m.services.items()):
+        calls = ", ".join(m.edges.get(name, [])) or "-"
+        typer.echo(f"{name:<20} {s.family.value:<7} {','.join(s.frameworks) or '-':<22} calls: {calls}")
+    typer.echo(f"Wrote {dest}")
