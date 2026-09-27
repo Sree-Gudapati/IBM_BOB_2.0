@@ -3,17 +3,49 @@ from debugagent.models import Family
 
 MAX_INPUT_CHARS = 5_000_000
 
-_ANSI = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
+# Strip ANSI CSI sequences (colours, cursor moves) and OSC sequences (title/link).
+_ANSI = re.compile(r"\x1b(?:\[[0-9;]*[A-Za-z]|\][^\x07\x1b]*(?:\x07|\x1b\\))")
+
+# Match structured-log prefixes at the START of a line.  Each component ends
+# with a single literal space that is consumed as part of the prefix.  The
+# final (?=\S) lookahead fires only when there is non-space payload remaining,
+# so a line that IS all prefix (or blank) produces an empty match and is left
+# unchanged.  Crucially, any indentation that belongs to the payload (e.g.
+# Python "  File …") is NOT consumed because the regex stops before it.
+#
+# Accepted components (all optional, in order):
+#   timestamp – ISO-8601 date+time, optional brackets/timezone
+#   level     – TRACE/DEBUG/INFO/WARN/WARNING/ERROR/SEVERE/FATAL/CRITICAL,
+#               case-insensitive, optional brackets/colon
+#   service   – [tag] or [tag:detail]
 _PREFIX = re.compile(
-    r"^(?:\[?\d{4}-\d{2}-\d{2}[T ][\d:.,]+(?:Z|[+-]\d{2}:?\d{2})?\]?\s+)?"
-    r"(?:\[?(?:TRACE|DEBUG|INFO|WARN|WARNING|ERROR|SEVERE|FATAL|CRITICAL)\]?:?\s+)?"
-    r"(?:\[[\w.@:/-]+\]\s+)?"
+    r"^(?:"
+    r"(?:\[?\d{4}-\d{2}-\d{2}[T ][\d:.,]+(?:Z|[+-]\d{2}:?\d{2})?\]? )?"
+    r"(?:\[?(?:TRACE|DEBUG|INFO|WARN(?:ING)?|ERROR|SEVERE|FATAL|CRITICAL)\]?:? )?"
+    r"(?:\[[\w.@:/-]+\] )?"
+    r")(?=\S)",
+    re.IGNORECASE,
 )
 
 _SIGNATURES: dict[Family, re.Pattern[str]] = {
-    Family.PYTHON: re.compile(r'^\s*Traceback \(most recent call last\):|^\s*File "[^"]+\.py", line \d+', re.M),
-    Family.JVM: re.compile(r"^\s*at [\w$.<>/]+\([\w$]+\.(?:java|kt|scala):\d+\)|^Exception in thread \"", re.M),
-    Family.NODE: re.compile(r"^\s*at (?:.+ \()?(?:file://)?[^\s()]+\.(?:js|mjs|cjs|ts|tsx|jsx):\d+:\d+\)?\s*$", re.M),
+    Family.PYTHON: re.compile(
+        r'^\s*Traceback \(most recent call last\):|^\s*File "[^"]+\.py", line \d+',
+        re.M,
+    ),
+    Family.JVM: re.compile(
+        r'^\s*at [\w$.<>/]+\([\w$]+\.(?:java|kt|scala):\d+\)|^Exception in thread "',
+        re.M,
+    ),
+    # Matches extension-bearing paths (.js/.ts/etc.) AND Node.js internal frames
+    # such as "node:net:1555:16" or "node:internal/stream_base_commons:183:27".
+    Family.NODE: re.compile(
+        r"^\s*at (?:.+ \()?"
+        r"(?:"
+        r"(?:file://)?[^\s()]+\.(?:js|mjs|cjs|ts|tsx|jsx):\d+:\d+"
+        r"|node:[\w/.-]+:\d+:\d+"
+        r")\)?\s*$",
+        re.M,
+    ),
     Family.GO: re.compile(r"^panic: |^fatal error: |^goroutine \d+ \[", re.M),
     Family.RUST: re.compile(r"^thread '[^']*' panicked at ", re.M),
 }
@@ -23,7 +55,7 @@ def normalize(text: str) -> str:
     if len(text) > MAX_INPUT_CHARS:
         text = text[-MAX_INPUT_CHARS:]
     text = text.replace("\r\n", "\n").replace("\r", "\n")
-    return "\n".join(_PREFIX.sub("", _ANSI.sub("", ln), count=1) for ln in text.split("\n"))
+    return "\n".join(_PREFIX.sub("", _ANSI.sub("", ln)) for ln in text.split("\n"))
 
 
 def detect_families(text: str) -> frozenset[Family]:

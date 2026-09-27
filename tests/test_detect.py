@@ -7,6 +7,14 @@ NODE = "TypeError: Cannot read properties of undefined (reading 'id')\n    at ha
 GO = "panic: runtime error: invalid memory address or nil pointer dereference\n\ngoroutine 1 [running]:\nmain.main()\n\t/srv/inv/main.go:9 +0x1d\n"
 RUST = "thread 'main' panicked at src/main.rs:4:37:\ncalled `Option::unwrap()` on a `None` value\n"
 
+# Node ECONNREFUSED trace containing only node: internal frames (no .js/.ts extension)
+NODE_INTERNAL = (
+    "Error: connect ECONNREFUSED 127.0.0.1:5432\n"
+    "    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1555:16)\n"
+    "    at node:internal/stream_base_commons:183:27\n"
+)
+
+
 def test_detects_each_family():
     assert detect_families(PY) == {Family.PYTHON}
     assert detect_families(JAVA) == {Family.JVM}
@@ -37,3 +45,24 @@ def test_normalize_keeps_tail_of_oversized_input():
     out = normalize(big)
     assert len(out) <= MAX_INPUT_CHARS
     assert "AttributeError: 'NoneType' object has no attribute 'y'" in out
+
+# Fix 1: normalize() must preserve payload indentation after stripping log prefix
+def test_normalize_preserves_indentation_after_prefix_strip():
+    """'  File "app/svc.py"' indentation must survive prefix stripping."""
+    wrapped = "\n".join(
+        f"2026-09-26T10:00:00Z ERROR [billing] {ln}" for ln in PY.splitlines()
+    )
+    out = normalize(wrapped)
+    # The two-space indent on File lines must still be present
+    assert '  File "app/svc.py", line 3, in run' in out
+    # And detection must still work on the normalized output
+    assert detect_families(out) == {Family.PYTHON}
+
+# Fix 2: Node ECONNREFUSED traces with only node: internal frames must be detected
+def test_detects_node_internal_frames():
+    """node:net and node:internal/... frames (no extension) must count as Node."""
+    assert detect_families(NODE_INTERNAL) == {Family.NODE}
+
+# Fix 2 (Review Focus #4 prerequisite): mixed Node+Java log detects both families
+def test_detects_node_internal_plus_java():
+    assert detect_families(NODE_INTERNAL + "\n" + JAVA) == {Family.NODE, Family.JVM}
