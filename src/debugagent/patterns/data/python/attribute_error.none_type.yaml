@@ -1,0 +1,15 @@
+id: python.attribute_error.none_type
+family: python
+error_type: AttributeError
+message_regex: "'NoneType' object has no attribute"
+category: code
+root_cause: >
+  A value expected to be an object is None, usually an unchecked return from a
+  lookup (dict.get, ORM .first(), regex match) or an optional field in a payload.
+base_confidence: 0.85
+tags: [null]
+fixes:
+  - summary: Guard with an explicit None check at the call site and handle the missing case
+    tradeoff: Local and fast, but can hide the upstream bug that produced None
+  - summary: Make the producer raise (or return a typed Optional checked by mypy) instead of silently returning None
+    tradeoff: Surfaces the bug at its source; changes the function's contract for other callers

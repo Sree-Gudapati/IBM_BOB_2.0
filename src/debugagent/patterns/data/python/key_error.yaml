@@ -1,0 +1,14 @@
+id: python.key_error
+family: python
+error_type: KeyError
+category: code
+root_cause: >
+  Dict lookup for a key missing from a payload or config, often schema drift
+  between services.
+base_confidence: 0.7
+tags: [schema]
+fixes:
+  - summary: Use .get() with an explicit default value
+    tradeoff: Tolerant of missing keys; may mask bad or incomplete data silently
+  - summary: Validate the payload at the service boundary with a schema (e.g. pydantic)
+    tradeoff: Fails early and loudly on bad data; requires more code and a schema definition

@@ -1,0 +1,15 @@
+id: python.connection_refused
+family: python
+error_type: "ConnectionRefusedError|ConnectionError|NewConnectionError|OperationalError"
+message_regex: "Connection refused|Errno 111|could not connect"
+category: dependency
+root_cause: >
+  Target service or database is not listening: it is down, the host/port is wrong,
+  or it is not yet ready at startup.
+base_confidence: 0.8
+tags: [connectivity]
+fixes:
+  - summary: Check service discovery and verify the host/port environment variables, then redeploy
+    tradeoff: Config fix; requires a new deploy to take effect
+  - summary: Add a readiness wait loop with retry at application startup
+    tradeoff: Makes startup resilient; slightly slower boot time

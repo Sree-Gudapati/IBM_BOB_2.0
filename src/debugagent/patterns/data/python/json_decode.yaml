@@ -1,0 +1,14 @@
+id: python.json_decode
+family: python
+error_type: "JSONDecodeError"
+category: dependency
+root_cause: >
+  The response body was not valid JSON, usually an HTML error page or an empty body
+  returned by an upstream failure.
+base_confidence: 0.75
+tags: [parsing]
+fixes:
+  - summary: Check the HTTP status code and Content-Type header before calling .json()
+    tradeoff: Gives clearer error messages; requires a few extra lines at every call site
+  - summary: Log the raw response body (truncated) on parse failure for immediate diagnosis
+    tradeoff: Makes failures diagnosable; increases log volume on unhealthy upstream services

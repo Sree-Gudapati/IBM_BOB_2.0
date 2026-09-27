@@ -1,0 +1,14 @@
+id: python.timeout
+family: python
+error_type: "TimeoutError|ReadTimeout|ConnectTimeout|ReadTimeoutError|ConnectTimeoutError"
+category: dependency
+root_cause: >
+  A downstream dependency did not respond within the configured timeout; the real
+  fault is usually in the service being called, not the caller.
+base_confidence: 0.75
+tags: [timeout]
+fixes:
+  - summary: Raise the timeout and add retry with exponential backoff
+    tradeoff: Buys time; can amplify load on an already-struggling downstream service
+  - summary: Fix the downstream slowness and add a circuit breaker at this call site
+    tradeoff: Root fix; requires cross-team coordination and a new deploy

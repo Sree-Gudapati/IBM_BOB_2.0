@@ -1,0 +1,15 @@
+id: python.type_error.none_not_subscriptable
+family: python
+error_type: TypeError
+message_regex: "'NoneType' object is not (subscriptable|iterable|callable)"
+category: code
+root_cause: >
+  None flowed to a place that expects a container or callable, typically an
+  unchecked return from a function that returns None on failure.
+base_confidence: 0.85
+tags: [null]
+fixes:
+  - summary: Guard None where the value is produced and raise a clear error
+    tradeoff: Local fix; may hide the upstream cause
+  - summary: Return an empty container ([], {}) instead of None from the producer
+    tradeoff: Removes the entire bug class; changes the function's return semantics

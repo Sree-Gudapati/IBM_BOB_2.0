@@ -1,0 +1,14 @@
+id: python.unbound_local
+family: python
+error_type: UnboundLocalError
+category: code
+root_cause: >
+  Variable is assigned only in some branches of a function, or an assignment later
+  in the function shadows a name from an outer scope.
+base_confidence: 0.85
+tags: [scoping]
+fixes:
+  - summary: Initialize the variable to a safe default before the branching logic
+    tradeoff: Simple one-line fix; the default value must be semantically meaningful
+  - summary: Rename the local variable to avoid shadowing, or use global/nonlocal explicitly
+    tradeoff: Makes intent clear; slightly wider diff if the name appears many times

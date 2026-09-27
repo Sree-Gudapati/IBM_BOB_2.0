@@ -1,0 +1,14 @@
+id: python.import_error.module_not_found
+family: python
+error_type: ModuleNotFoundError
+message_regex: "No module named"
+category: config
+root_cause: >
+  Package missing from the runtime image, or wrong import path / missing __init__.py.
+base_confidence: 0.85
+tags: [import, deploy]
+fixes:
+  - summary: Add the package to requirements/pyproject.toml and rebuild the image
+    tradeoff: Correct fix; requires a new deploy
+  - summary: Fix the package layout or PYTHONPATH so the existing install is found
+    tradeoff: No new dependency; may affect other imports if PYTHONPATH is shared

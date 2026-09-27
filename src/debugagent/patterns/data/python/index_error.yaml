@@ -1,0 +1,14 @@
+id: python.index_error
+family: python
+error_type: IndexError
+message_regex: "index out of range"
+category: code
+root_cause: >
+  Off-by-one error, or code assumed a collection is non-empty when it can be empty.
+base_confidence: 0.8
+tags: [off-by-one, empty]
+fixes:
+  - summary: Check emptiness or length before indexing
+    tradeoff: Minimal local change; may need to propagate a sentinel or raise an error
+  - summary: Iterate or use next(iter(x), default) instead of direct indexing
+    tradeoff: Removes the bug class; small refactor of the surrounding logic

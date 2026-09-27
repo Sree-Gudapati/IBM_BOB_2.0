@@ -1,0 +1,15 @@
+id: python.recursion_error
+family: python
+error_type: RecursionError
+message_regex: "maximum recursion depth exceeded"
+category: code
+root_cause: >
+  Unbounded recursion: a missing base case, or cyclic data (for example a
+  self-referencing object in a serializer).
+base_confidence: 0.85
+tags: [recursion]
+fixes:
+  - summary: Add a base case or cycle detection to the recursive function
+    tradeoff: Fixes the root cause; requires understanding the data graph
+  - summary: Convert the recursion to an iterative loop with an explicit stack
+    tradeoff: Robust and stack-safe; bigger change, loses the elegant recursive form

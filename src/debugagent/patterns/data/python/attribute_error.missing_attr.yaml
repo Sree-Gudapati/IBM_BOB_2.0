@@ -1,0 +1,15 @@
+id: python.attribute_error.missing_attr
+family: python
+error_type: AttributeError
+message_regex: "has no attribute"
+category: code
+root_cause: >
+  Typo in the attribute name, or the object is a different type than assumed
+  (dict vs object, wrong library version).
+base_confidence: 0.6
+tags: [typo]
+fixes:
+  - summary: Fix the attribute name and add type hints + mypy to catch this at development time
+    tradeoff: Cheap; requires typing discipline across the codebase
+  - summary: Pin the dependency version that has the attribute
+    tradeoff: Fast workaround; defers the upgrade and its compatibility work

@@ -1,0 +1,15 @@
+id: python.type_error.call_signature
+family: python
+error_type: TypeError
+message_regex: "missing \\d+ required positional argument|takes \\d+ positional arguments? but \\d+ (were|was) given|got an unexpected keyword argument"
+category: code
+root_cause: >
+  Caller and callee signatures drifted apart, usually after a refactor or a
+  library upgrade that changed the function's parameters.
+base_confidence: 0.85
+tags: [api-drift]
+fixes:
+  - summary: Update every call site to match the new signature
+    tradeoff: Correct fix; may touch many files across the codebase
+  - summary: Add a backward-compatible default or keyword argument to the callee
+    tradeoff: Safe for existing callers; accumulates cruft over time

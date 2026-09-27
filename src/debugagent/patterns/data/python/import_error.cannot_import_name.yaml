@@ -1,0 +1,14 @@
+id: python.import_error.cannot_import_name
+family: python
+error_type: ImportError
+message_regex: "cannot import name"
+category: code
+root_cause: >
+  Circular import, or the symbol was removed or renamed in a dependency upgrade.
+base_confidence: 0.8
+tags: [import]
+fixes:
+  - summary: Break the cycle by moving the import inside the function body
+    tradeoff: Quick; hides a design smell that may resurface
+  - summary: Pin or upgrade to a version that exports the symbol
+    tradeoff: Clean fix; introduces version churn and compatibility testing
