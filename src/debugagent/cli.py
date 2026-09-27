@@ -74,6 +74,7 @@ def diagnose(
     patterns: list[Path] = typer.Option([], "--patterns", help="Extra pattern directories"),  # noqa: B008
     limit: int = typer.Option(DEFAULT_JSON_LIMIT, "--limit", min=1,
                               help="Max hypotheses in JSON output"),
+    timeout: float = typer.Option(2.0, "--timeout", help="Per-subagent timeout in seconds"),
 ) -> None:
     """Diagnose a stack trace or error log."""
     for pdir in patterns:
@@ -84,7 +85,7 @@ def diagnose(
         subagents = build_subagents(patterns)
     except PatternError as e:
         raise _fail(f"Pattern database error: {e}", 1) from None
-    d = run_diagnose(text, subagents)
+    d = run_diagnose(text, subagents, timeout_s=timeout)
     if d.top is None:
         unsupported = sorted(f.value for f in d.families if f not in subagents)
         if unsupported:

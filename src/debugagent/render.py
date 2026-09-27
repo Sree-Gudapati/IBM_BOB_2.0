@@ -69,4 +69,5 @@ def render_json(d: Diagnosis, limit: int | None = DEFAULT_JSON_LIMIT) -> str:
         "families": sorted(f.value for f in d.families),
         "hypotheses": [_h(h) for h in hyps],
         "notes": notes,
+        "timings": {fam: secs for fam, secs in d.timings},
     }, indent=2)

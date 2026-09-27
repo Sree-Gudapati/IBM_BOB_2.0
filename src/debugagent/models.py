@@ -67,6 +67,7 @@ class Diagnosis:
     hypotheses: tuple[Hypothesis, ...]  # sorted by confidence desc
     families: frozenset[Family]
     notes: tuple[str, ...] = ()         # truncation, subagent timeouts/crashes
+    timings: tuple[tuple[str, float], ...] = ()  # (family value, seconds) per finished subagent
 
     @property
     def top(self) -> Hypothesis | None:
