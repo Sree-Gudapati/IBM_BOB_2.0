@@ -33,14 +33,13 @@ _SIGNATURES: dict[Family, re.Pattern[str]] = {
         r'^\s*at [\w$.<>/]+\([\w$]+\.(?:java|kt|scala):\d+\)|^Exception in thread "',
         re.MULTILINE,
     ),
-    # Matches extension-bearing paths (.js/.ts/etc.) AND Node.js internal frames
-    # such as "node:net:1555:16" or "node:internal/stream_base_commons:183:27".
+    # Matches extension-bearing paths (.js/.ts/etc.), Node.js internal frames
+    # (node:net:1555:16), V8 fatal heap OOM, and UnhandledPromiseRejection.
     Family.NODE: re.compile(
-        r"^\s*at (?:.+ \()?"
-        r"(?:"
-        r"(?:file://)?[^\s()]+\.(?:js|mjs|cjs|ts|tsx|jsx):\d+:\d+"
+        r"^\s*at (?:.+ \()?(?:file://)?[^\s()]+\.(?:js|mjs|cjs|ts|tsx|jsx):\d+:\d+\)?\s*(?:\{)?\s*$"
         r"|node:[\w/.-]+:\d+:\d+"
-        r")\)?\s*$",
+        r"|^FATAL ERROR: .*heap out of memory"
+        r"|^\[UnhandledPromiseRejection: ",
         re.MULTILINE,
     ),
     Family.GO: re.compile(r"^panic: |^fatal error: |^goroutine \d+ \[", re.MULTILINE),
