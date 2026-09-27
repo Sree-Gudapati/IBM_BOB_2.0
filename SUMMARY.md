@@ -245,6 +245,61 @@ Wired the parser + pattern pipeline into a working CLI. `debugagent diagnose` no
 
 ---
 
+## Task 4 — JVM Parser (Java/Kotlin/Scala) and 14 JVM Patterns
+
+**Status:** ✅ Complete
+**Commit:** `11d8e0b`
+
+### What was done
+
+Added a full JVM parser with `Caused by:` chain folding and 14 JVM patterns. Java/Kotlin/Scala stack traces now go all the way through the pipeline to a diagnosis.
+
+### Files created
+
+| File | Description |
+|---|---|
+| `src/debugagent/parsers/jvm.py` | Line-by-line parser: exception header regex (FQN, optional `Caused by:` / `Exception in thread`), `at` frame regex (module-prefix strip for `java.base/`), `... N more` skip, `Suppressed:` block skip, `_fold()` builds `.cause` chain innermost-last |
+| `src/debugagent/patterns/data/jvm/*.yaml` | 14 JVM patterns (see table below) |
+| `tests/parsers/test_jvm.py` | 7 parser tests |
+| `tests/patterns/test_jvm_patterns.py` | 15 tests (14 golden + chained fixture end-to-end) |
+| `tests/data/jvm_chained.txt` | 3-level `Caused by:` chain fixture (Spring → IllegalState → NPE) |
+
+**Modified:** `src/debugagent/parsers/__init__.py` — registered `Family.JVM: jvm.parse`
+
+### JVM patterns (14)
+
+| Pattern ID | Error type | Message regex | Category | Confidence |
+|---|---|---|---|---|
+| `jvm.npe.helpful` | `NullPointerException` | `because "…" is null\|Cannot invoke` | code | 0.90 |
+| `jvm.npe` | `NullPointerException` | _(generic)_ | code | 0.80 |
+| `jvm.optional_get_empty` | `NoSuchElementException` | `No value present` | code | 0.90 |
+| `jvm.class_cast` | `ClassCastException` | _(generic)_ | code | 0.80 |
+| `jvm.pool_exhausted` | `SQLTransientConnectionException\|…` | `not available\|pool\|timed?out` | resource | 0.85 |
+| `jvm.socket_timeout` | `SocketTimeoutException\|…` | _(generic)_ | dependency | 0.75 |
+| `jvm.connection_refused` | `ConnectException\|HttpHostConnectException` | `Connection refused` | dependency | 0.80 |
+| `jvm.oom` | `OutOfMemoryError` | `Java heap space\|GC overhead\|…` | resource | 0.85 |
+| `jvm.concurrent_modification` | `ConcurrentModificationException` | _(generic)_ | code | 0.85 |
+| `jvm.stack_overflow` | `StackOverflowError` | _(generic)_ | code | 0.85 |
+| `jvm.spring_missing_bean` | `NoSuchBeanDefinitionException\|UnsatisfiedDependencyException` | _(generic)_ | config | 0.85 |
+| `jvm.datetime_parse` | `DateTimeParseException` | _(generic)_ | code | 0.80 |
+| `jvm.index_out_of_bounds` | `IndexOutOfBoundsException\|Array…\|String…` | _(generic)_ | code | 0.80 |
+| `jvm.illegal_argument_state` | `IllegalArgumentException\|IllegalStateException` | _(generic)_ | code | 0.50 |
+
+### Test results
+
+```
+117 passed in 2.39s
+```
+
+### Key design decisions
+
+- **`_fold()` reverses segments** so the outermost `ParsedTrace` wraps all `Caused by:` chains as `.cause` — `.root()` always reaches the innermost original cause.
+- **`java.base/` module prefix** is stripped from the `at` line's qualified name so `java.base/java.util.Optional` becomes module `java.util.Optional`.
+- **`Native Method` / `Unknown Source`** frames parse with `line=None`, satisfying the Task 1 deferred item (medium severity).
+- **"Family without subagent" tests** updated from JVM to Go — now that JVM is registered, Go is the first unregistered family.
+
+---
+
 ## Task 3 — Post-Review Fixes
 
 **Status:** ✅ Complete (uncommitted)
