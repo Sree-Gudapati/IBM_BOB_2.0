@@ -1,6 +1,6 @@
 id: jvm.npe
 family: jvm
-error_type: "NullPointerException"
+error_type: "(?:Kotlin)?NullPointerException"
 category: code
 root_cause: >
   Null dereference at the top app frame; commonly an unchecked return value,

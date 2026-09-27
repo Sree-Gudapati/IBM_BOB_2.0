@@ -1,6 +1,6 @@
 id: jvm.npe.helpful
 family: jvm
-error_type: "NullPointerException"
+error_type: "(?:Kotlin)?NullPointerException"
 message_regex: 'because ".+" is null|Cannot invoke'
 category: code
 root_cause: >

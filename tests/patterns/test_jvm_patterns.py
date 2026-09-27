@@ -1,6 +1,9 @@
+from pathlib import Path
+
 import pytest
+
 from debugagent.models import Family, Frame, ParsedTrace
-from debugagent.patterns.loader import load_patterns, DEFAULT_PATTERN_DIR
+from debugagent.patterns.loader import DEFAULT_PATTERN_DIR, load_patterns
 from debugagent.patterns.matcher import match_trace
 
 PATS = load_patterns(DEFAULT_PATTERN_DIR)
@@ -30,7 +33,20 @@ def test_each_jvm_pattern_matches(etype, msg, expected):
 def test_chained_fixture_diagnoses_root_npe():
     from debugagent.detect import normalize
     from debugagent.parsers.jvm import parse
-    [t] = parse(normalize(open("tests/data/jvm_chained.txt").read()))
+    [t] = parse(normalize(Path("tests/data/jvm_chained.txt").read_text()))
     h = match_trace(t, PATS)
     assert h.pattern_id == "jvm.npe.helpful"
     assert h.locations[0].function == "Discounts.forName"   # library frames skipped
+
+
+def test_kotlin_npe_matches_npe_pattern():
+    from debugagent.orchestrator import diagnose
+    from debugagent.subagent import build_subagents
+    d = diagnose("kotlin.KotlinNullPointerException\n\tat com.a.MainKt.main(Main.kt:3)\n", build_subagents())
+    assert d.top.pattern_id == "jvm.npe"
+
+def test_frameless_oom_diagnosed():
+    from debugagent.orchestrator import diagnose
+    from debugagent.subagent import build_subagents
+    d = diagnose('Exception in thread "main" java.lang.OutOfMemoryError: Java heap space\n', build_subagents())
+    assert d.top.pattern_id == "jvm.oom"

@@ -30,7 +30,10 @@ _SIGNATURES: dict[Family, re.Pattern[str]] = {
         re.MULTILINE,
     ),
     Family.JVM: re.compile(
-        r'^\s*at [\w$.<>/]+\([\w$]+\.(?:java|kt|scala):\d+\)|^Exception in thread "',
+        r'^\s*at [\w$.<>/@-]+\((?:[\w$]+\.(?:java|kt|scala):\d+|Native Method|Unknown Source)\)'
+        r'|^Exception in thread "'
+        r"|^\s*\.\.\. \d+ (?:more|common frames omitted)\s*$"
+        r"|^Caused by: (?:[a-z_$][\w$]*\.)+[A-Z]",
         re.MULTILINE,
     ),
     # Matches extension-bearing paths (.js/.ts/etc.), Node.js internal frames
