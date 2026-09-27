@@ -48,3 +48,21 @@ def test_missing_directory_is_skipped(tmp_path):
 def test_builtin_python_patterns_load_and_meet_top10():
     pats = [p for p in load_patterns(DEFAULT_PATTERN_DIR) if p.family is Family.PYTHON]
     assert len(pats) >= 10
+
+
+# --- Task 2 review fixes: malformed manual patterns raise PatternError naming the file
+@pytest.mark.parametrize("mutation,needle", [
+    (lambda s: s.replace(", tradeoff: More code", ""), "fixes[1]"),
+    (lambda s: s.replace("root_cause: Missing key.", "root_cause: 5"), "'root_cause' must be"),
+    (lambda s: s.replace("id: python.test.thing", "id: [a]"), "'id' must be"),
+    (lambda s: s.replace("tags: [schema]", "tags: [null]"), "tags must be a list of strings"),
+    (lambda s: s + "message_regex: 5\n", "'message_regex' must be"),
+])
+def test_malformed_fields_raise_pattern_error(tmp_path, mutation, needle):
+    (tmp_path / "bad.yaml").write_text(mutation(GOOD))
+    with pytest.raises(PatternError) as e:
+        load_patterns(tmp_path)
+    assert "bad.yaml" in str(e.value) and needle in str(e.value)
+
+def test_builtin_tags_are_all_strings():
+    assert all(isinstance(t, str) for p in load_patterns(DEFAULT_PATTERN_DIR) for t in p.tags)

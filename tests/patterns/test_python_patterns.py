@@ -25,3 +25,12 @@ def test_each_python_pattern_matches(etype, msg, expected):
     h = match_trace(ParsedTrace(Family.PYTHON, etype, msg, F), PATS)
     assert h.pattern_id == expected
     assert 2 <= len(h.fixes) <= 3 and h.repro_test
+
+
+def test_socket_timeout_alias_matches_timeout_pattern():
+    from debugagent.parsers.python import parse
+    from debugagent.patterns.loader import DEFAULT_PATTERN_DIR, load_patterns
+    from debugagent.patterns.matcher import match_trace
+    [t] = parse('Traceback (most recent call last):\n  File "/srv/a.py", line 1, in f\n    s.recv(1)\n'
+                "socket.timeout: timed out\n")
+    assert match_trace(t, load_patterns(DEFAULT_PATTERN_DIR)).pattern_id == "python.timeout"

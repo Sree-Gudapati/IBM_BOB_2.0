@@ -1,6 +1,7 @@
 import re
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 import yaml
 from debugagent.models import Family, FixOption
 from debugagent.patterns.repro import FAMILY_REPRO
@@ -29,7 +30,14 @@ class Pattern:
     source: str            # "builtin" | "manual" | "learned"
 
 
-def _build(path: Path, d: dict, source: str) -> Pattern:
+def _str_field(path: Path, d: dict[str, Any], key: str) -> str:
+    v = d[key]
+    if not isinstance(v, str) or not v.strip():
+        raise PatternError(f"{path}: '{key}' must be a non-empty string, got {v!r}")
+    return v
+
+
+def _build(path: Path, d: dict[str, Any], source: str) -> Pattern:
     if not isinstance(d, dict):
         raise PatternError(f"{path}: top level must be a mapping")
     for k in _REQUIRED:
@@ -50,17 +58,28 @@ def _build(path: Path, d: dict, source: str) -> Pattern:
             f"{path}: need 2-3 fixes with trade-offs, got "
             f"{len(fixes) if isinstance(fixes, list) else fixes!r}"
         )
+    for i, f in enumerate(fixes):
+        if not (isinstance(f, dict) and all(isinstance(f.get(k), str) and f[k].strip()
+                                            for k in ("summary", "tradeoff"))):
+            raise PatternError(f"{path}: fixes[{i}] needs non-empty 'summary' and 'tradeoff' strings")
+    tags = d.get("tags") or []
+    if not isinstance(tags, list) or not all(isinstance(t, str) for t in tags):
+        raise PatternError(f"{path}: tags must be a list of strings (quote YAML words like null/yes/no)")
+    pid, root_cause, etype_src = (_str_field(path, d, k) for k in ("id", "root_cause", "error_type"))
+    mrx_src = d.get("message_regex")
+    if mrx_src is not None and not isinstance(mrx_src, str):
+        raise PatternError(f"{path}: 'message_regex' must be a string, got {mrx_src!r}")
     try:
-        etype = re.compile(d["error_type"])
-        mrx = re.compile(d["message_regex"]) if d.get("message_regex") else None
+        etype = re.compile(etype_src)
+        mrx = re.compile(mrx_src) if mrx_src else None
     except re.error as e:
         raise PatternError(f"{path}: bad message_regex/error_type: {e}") from None
     return Pattern(
-        id=d["id"], family=family, error_type=etype, message_regex=mrx,
-        category=d["category"], root_cause=d["root_cause"].strip(), base_confidence=float(conf),
+        id=pid, family=family, error_type=etype, message_regex=mrx,
+        category=d["category"], root_cause=root_cause.strip(), base_confidence=float(conf),
         fixes=tuple(FixOption(f["summary"], f["tradeoff"]) for f in fixes),
         repro_template=d.get("repro_template") or FAMILY_REPRO[family],
-        tags=tuple(d.get("tags", ())), source=d.get("source", source),
+        tags=tuple(tags), source=d.get("source", source),
     )
 
 

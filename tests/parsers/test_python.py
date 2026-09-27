@@ -56,3 +56,66 @@ def test_source_line_that_looks_like_a_name_is_not_an_exception():
 
 def test_no_traceback_returns_empty():
     assert parse("INFO all good\n") == []
+
+
+# --- Task 2 review fixes -----------------------------------------------------
+
+def _tb(exc: str, frame: str = '  File "/srv/app/x.py", line 5, in run\n    go()\n') -> str:
+    return "Traceback (most recent call last):\n" + frame + exc + "\n"
+
+def test_dotted_lowercase_exception_type_parses():
+    [t] = parse(_tb("socket.timeout: timed out"))
+    assert t.error_type == "socket.timeout" and t.message == "timed out"
+
+def test_dotted_custom_exception_without_message_parses():
+    [t] = parse(_tb("app.errors.PaymentDeclined"))
+    assert t.error_type == "app.errors.PaymentDeclined" and t.message == ""
+
+def test_indented_source_line_is_never_the_exception():
+    [t] = parse(_tb("KeyError: 'a'", '  File "/a.py", line 1, in f\n    Foo: int = 3\n'))
+    assert t.error_type == "KeyError"
+
+SYNTAX = '''Traceback (most recent call last):
+  File "/srv/app/main.py", line 1, in <module>
+    import broken
+  File "/srv/app/broken.py", line 3
+    def f(
+         ^
+SyntaxError: '(' was never closed
+'''
+
+def test_syntax_error_innermost_frame_is_the_broken_file():
+    [t] = parse(SYNTAX)
+    assert t.error_type == "SyntaxError"
+    assert t.frames[0].file == "/srv/app/broken.py" and t.frames[0].line == 3
+    assert t.frames[0].function == "<unknown>" and len(t.frames) == 2
+
+def test_headerless_syntax_error_parses():
+    [t] = parse(SYNTAX.split("\n", 3)[3])
+    assert t.error_type == "SyntaxError" and t.frames[0].file == "/srv/app/broken.py"
+
+GROUP = '''  + Exception Group Traceback (most recent call last):
+  |   File "/srv/app/main.py", line 9, in <module>
+  |     run()
+  | ExceptionGroup: batch failed (2 sub-exceptions)
+  +-+---------------- 1 ----------------
+    | Traceback (most recent call last):
+    |   File "/srv/app/worker.py", line 4, in job
+    |     d["k"]
+    | KeyError: 'k'
+    +---------------- 2 ----------------
+    | Traceback (most recent call last):
+    |   File "/srv/app/worker.py", line 8, in job2
+    |     x.y
+    | AttributeError: 'NoneType' object has no attribute 'y'
+    +------------------------------------
+'''
+
+def test_exception_group_root_is_first_sub_exception():
+    # Sub-exception 1 becomes the group's cause; later sub-exceptions are their own traces.
+    t, second = parse(GROUP)
+    assert t.short_error_type == "ExceptionGroup"
+    assert t.frames[0].file == "/srv/app/main.py"
+    root = t.root()
+    assert root.error_type == "KeyError" and root.frames[0].file == "/srv/app/worker.py"
+    assert second.error_type == "AttributeError"

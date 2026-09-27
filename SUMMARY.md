@@ -139,3 +139,69 @@ Built the full pattern-matching pipeline that takes raw Python tracebacks all th
 - **`FAMILY_REPRO` templates pre-written for all 5 families** so Tasks 4–7 get repro rendering for free.
 
 ---
+
+## Task 2 — Post-Review Fixes
+
+**Status:** ✅ Complete (uncommitted)
+
+Extended review (≈60 probe cases on top of the suite) found one data bug and several inputs that were silently dropped or mis-parsed. All fixed before Task 3, since `diagnose` builds directly on the parser and loader.
+
+### Fix 1 — `tags: [null]` loaded as Python `None` (High)
+
+**Root cause:** YAML parses unquoted `null` as `None`, so `attribute_error.none_type` and `type_error.none_not_subscriptable` had `tags == (None,)`, which would crash or print `None` in the Task 3 renderer.
+**Fix:** Quoted as `"null"` in both files; the loader now rejects non-string tags with a hint to quote YAML keywords (`null`/`yes`/`no`).
+
+### Fix 2 — Tracebacks dropped entirely, not even `unknown` (High)
+
+Violated Review Focus #3 (unrecognized errors must still get a 0.1 `<family>.unknown`).
+
+| Input | Root cause | Fix |
+|---|---|---|
+| `socket.timeout: timed out` | `_EXC` required the last name segment to be Capitalised | Dotted names may end lowercase; `timeout` added to `python.timeout` `error_type` |
+| `app.errors.PaymentDeclined` (no message) | Bare names were only accepted with an `Error`/`Exception`/… suffix | Dotted names are accepted without a message |
+| `File "x.py", line 3` (no `, in func`) | `_FRAME` required `, in <func>` | `, in` optional; function recorded as `<unknown>` |
+| Header-less SyntaxError output | Parsing only began at `Traceback …` | A `File` line also opens a trace |
+| Exception groups (3.11+ `+`/`\|` box format) | Gutters and separators were not understood | Gutters stripped, separators skipped; first sub-exception becomes the group's `cause`, later sub-exceptions are separate traces |
+
+### Fix 3 — SyntaxError pointed at the importing file (Medium)
+
+**Root cause:** the syntax-error location line has no `, in`, so it was skipped and `frames[0]` was the importer.
+**Fix:** covered by the optional-`, in` change above; `frames[0]` is now the broken file.
+
+### Fix 4 — Indented source lines taken as the exception (Medium)
+
+**Root cause:** a source line like `    Foo: int = 3` matched `_EXC`, ending the trace before the real exception line.
+**Fix:** only unindented lines can be exception lines (CPython's format). This relies on Task 1's indentation-preserving `normalize()`.
+
+### Fix 5 — Malformed manual patterns crashed with raw errors (Medium)
+
+**Root cause:** a fix without `tradeoff` raised `KeyError`; a non-string `root_cause` raised `AttributeError`.
+**Fix:** the loader validates each fix's `summary`/`tradeoff`, the string fields `id`/`root_cause`/`error_type`, `message_regex`, and `tags`, raising `PatternError` with the file name.
+
+### Other changes
+
+- `types-PyYAML>=6.0` added to dev deps; `dict[str, Any]` annotations added, so `mypy --strict` is clean.
+
+### New tests (14)
+
+- `tests/parsers/test_python.py`: dotted lowercase type, dotted custom exception without a message, indented source line, SyntaxError innermost frame, header-less SyntaxError, exception group root
+- `tests/patterns/test_loader.py`: 5 parametrized malformed-field cases, built-in tags are all strings
+- `tests/patterns/test_matcher.py`: previously-dropped traces now get a hypothesis
+- `tests/patterns/test_python_patterns.py`: `socket.timeout` → `python.timeout`
+
+### Test results after fixes
+
+```
+61 passed in 0.15s  (coverage 96%, mypy --strict clean)
+Perf: 7.1 MB log / 1,409 traces in 0.49 s
+```
+
+### Deferred items
+
+| Severity | Item | Owning task |
+|---|---|---|
+| Low | A user pattern with a built-in's `id` is rejected as a duplicate (override policy undecided) | Task 13 |
+| Low | Multi-line exception messages keep only the first line | Future |
+| Low | 19 auto-fixable ruff style issues | Cleanup |
+
+---

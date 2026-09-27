@@ -71,3 +71,16 @@ def test_is_library_frame_per_family():
     assert not is_library_frame(Frame("Orders.java", 1, "place", "com.acme.Orders"), Family.JVM)
     assert is_library_frame(Frame("/usr/local/go/src/runtime/panic.go", 1, "gopanic"), Family.GO)
     assert is_library_frame(Frame("/rustc/abc/library/core/src/panicking.rs", 1, "panic"), Family.RUST)
+
+
+# --- Task 2 review fixes: previously-dropped traces now reach the matcher
+def test_previously_dropped_traces_get_a_hypothesis():
+    from debugagent.parsers.python import parse
+    from debugagent.patterns.loader import DEFAULT_PATTERN_DIR, load_patterns
+    pats = load_patterns(DEFAULT_PATTERN_DIR)
+    tb = 'Traceback (most recent call last):\n  File "/srv/app/x.py", line 5, in run\n    go()\n'
+    [t] = parse(tb + "app.errors.PaymentDeclined\n")
+    h = match_trace(t, pats)
+    assert h.pattern_id == "python.unknown" and h.confidence == 0.1
+    [t] = parse(tb + "ConnectionRefusedError: [Errno 111] Connection refused\n")
+    assert match_trace(t, pats).pattern_id == "python.connection_refused"

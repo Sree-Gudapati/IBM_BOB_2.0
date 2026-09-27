@@ -7,7 +7,7 @@ root_cause: >
   None flowed to a place that expects a container or callable, typically an
   unchecked return from a function that returns None on failure.
 base_confidence: 0.85
-tags: [null]
+tags: ["null"]
 fixes:
   - summary: Guard None where the value is produced and raise a clear error
     tradeoff: Local fix; may hide the upstream cause

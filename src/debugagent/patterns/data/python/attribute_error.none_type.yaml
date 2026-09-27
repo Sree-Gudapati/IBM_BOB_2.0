@@ -7,7 +7,7 @@ root_cause: >
   A value expected to be an object is None, usually an unchecked return from a
   lookup (dict.get, ORM .first(), regex match) or an optional field in a payload.
 base_confidence: 0.85
-tags: [null]
+tags: ["null"]
 fixes:
   - summary: Guard with an explicit None check at the call site and handle the missing case
     tradeoff: Local and fast, but can hide the upstream bug that produced None

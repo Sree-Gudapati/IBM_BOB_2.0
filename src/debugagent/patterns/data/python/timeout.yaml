@@ -1,6 +1,6 @@
 id: python.timeout
 family: python
-error_type: "TimeoutError|ReadTimeout|ConnectTimeout|ReadTimeoutError|ConnectTimeoutError"
+error_type: "TimeoutError|timeout|ReadTimeout|ConnectTimeout|ReadTimeoutError|ConnectTimeoutError"
 category: dependency
 root_cause: >
   A downstream dependency did not respond within the configured timeout; the real
